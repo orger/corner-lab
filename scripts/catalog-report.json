@@ -1,0 +1,360 @@
+{
+  "rejected": [],
+  "corrections": [
+    {
+      "sourceCase": "CLL-AS5",
+      "actualCase": "CLL-AS6",
+      "algorithm": "R U R' U' R' F R F' R U2 R' U' R U' R'",
+      "reason": "Exact simulation matches AS6 with final U2; it does not solve AS5."
+    }
+  ],
+  "jpermMappings": [
+    {
+      "source": "CLL L1",
+      "caseId": "CLL-L4"
+    },
+    {
+      "source": "CLL L2",
+      "caseId": "CLL-L5"
+    },
+    {
+      "source": "CLL L3",
+      "caseId": "CLL-L6"
+    },
+    {
+      "source": "CLL L4",
+      "caseId": "CLL-L2"
+    },
+    {
+      "source": "CLL L5",
+      "caseId": "CLL-L1"
+    },
+    {
+      "source": "CLL L6",
+      "caseId": "CLL-L3"
+    },
+    {
+      "source": "CLL U1",
+      "caseId": "CLL-U2"
+    },
+    {
+      "source": "CLL U2",
+      "caseId": "CLL-U3"
+    },
+    {
+      "source": "CLL U3",
+      "caseId": "CLL-U6"
+    },
+    {
+      "source": "CLL U4",
+      "caseId": "CLL-U4"
+    },
+    {
+      "source": "CLL U5",
+      "caseId": "CLL-U5"
+    },
+    {
+      "source": "CLL U6",
+      "caseId": "CLL-U1"
+    },
+    {
+      "source": "CLL T1",
+      "caseId": "CLL-T4"
+    },
+    {
+      "source": "CLL T2",
+      "caseId": "CLL-T6"
+    },
+    {
+      "source": "CLL T3",
+      "caseId": "CLL-T2"
+    },
+    {
+      "source": "CLL T4",
+      "caseId": "CLL-T5"
+    },
+    {
+      "source": "CLL T5",
+      "caseId": "CLL-T1"
+    },
+    {
+      "source": "CLL T6",
+      "caseId": "CLL-T3"
+    },
+    {
+      "source": "CLL P1",
+      "caseId": "CLL-Pi1"
+    },
+    {
+      "source": "CLL P2",
+      "caseId": "CLL-Pi6"
+    },
+    {
+      "source": "CLL P3",
+      "caseId": "CLL-Pi4"
+    },
+    {
+      "source": "CLL P4",
+      "caseId": "CLL-Pi5"
+    },
+    {
+      "source": "CLL P5",
+      "caseId": "CLL-Pi3"
+    },
+    {
+      "source": "CLL P6",
+      "caseId": "CLL-Pi2"
+    },
+    {
+      "source": "CLL H1",
+      "caseId": "CLL-H1"
+    },
+    {
+      "source": "CLL H2",
+      "caseId": "CLL-H4"
+    },
+    {
+      "source": "CLL H3",
+      "caseId": "CLL-H3"
+    },
+    {
+      "source": "CLL H4",
+      "caseId": "CLL-H2"
+    },
+    {
+      "source": "CLL AS1",
+      "caseId": "CLL-AS1"
+    },
+    {
+      "source": "CLL AS2",
+      "caseId": "CLL-AS5"
+    },
+    {
+      "source": "CLL AS3",
+      "caseId": "CLL-AS3"
+    },
+    {
+      "source": "CLL AS4",
+      "caseId": "CLL-AS6"
+    },
+    {
+      "source": "CLL AS5",
+      "caseId": "CLL-AS4"
+    },
+    {
+      "source": "CLL AS6",
+      "caseId": "CLL-AS2"
+    },
+    {
+      "source": "CLL S1",
+      "caseId": "CLL-S1"
+    },
+    {
+      "source": "CLL S2",
+      "caseId": "CLL-S6"
+    },
+    {
+      "source": "CLL S3",
+      "caseId": "CLL-S3"
+    },
+    {
+      "source": "CLL S4",
+      "caseId": "CLL-S5"
+    },
+    {
+      "source": "CLL S5",
+      "caseId": "CLL-S4"
+    },
+    {
+      "source": "CLL S6",
+      "caseId": "CLL-S2"
+    },
+    {
+      "source": "CLL Adjacent",
+      "caseId": "CLL-O-Adjacent"
+    },
+    {
+      "source": "CLL Diagonal",
+      "caseId": "CLL-O-Diagonal"
+    },
+    {
+      "source": "EG1 L1",
+      "caseId": "EG1-L1"
+    },
+    {
+      "source": "EG1 L2",
+      "caseId": "EG1-L2"
+    },
+    {
+      "source": "EG1 L3",
+      "caseId": "EG1-L6"
+    },
+    {
+      "source": "EG1 L4",
+      "caseId": "EG1-L5"
+    },
+    {
+      "source": "EG1 L5",
+      "caseId": "EG1-L3"
+    },
+    {
+      "source": "EG1 L6",
+      "caseId": "EG1-L4"
+    },
+    {
+      "source": "EG1 U1",
+      "caseId": "EG1-U2"
+    },
+    {
+      "source": "EG1 U2",
+      "caseId": "EG1-U1"
+    },
+    {
+      "source": "EG1 U3",
+      "caseId": "EG1-U4"
+    },
+    {
+      "source": "EG1 U4",
+      "caseId": "EG1-U3"
+    },
+    {
+      "source": "EG1 U5",
+      "caseId": "EG1-U6"
+    },
+    {
+      "source": "EG1 U6",
+      "caseId": "EG1-U5"
+    },
+    {
+      "source": "EG1 T1",
+      "caseId": "EG1-T4"
+    },
+    {
+      "source": "EG1 T2",
+      "caseId": "EG1-T3"
+    },
+    {
+      "source": "EG1 T3",
+      "caseId": "EG1-T5"
+    },
+    {
+      "source": "EG1 T4",
+      "caseId": "EG1-T6"
+    },
+    {
+      "source": "EG1 T5",
+      "caseId": "EG1-T1"
+    },
+    {
+      "source": "EG1 T6",
+      "caseId": "EG1-T2"
+    },
+    {
+      "source": "EG1 P1",
+      "caseId": "EG1-Pi1"
+    },
+    {
+      "source": "EG1 P2",
+      "caseId": "EG1-Pi2"
+    },
+    {
+      "source": "EG1 P3",
+      "caseId": "EG1-Pi3"
+    },
+    {
+      "source": "EG1 P4",
+      "caseId": "EG1-Pi4"
+    },
+    {
+      "source": "EG1 P5",
+      "caseId": "EG1-Pi5"
+    },
+    {
+      "source": "EG1 P6",
+      "caseId": "EG1-Pi6"
+    },
+    {
+      "source": "EG1 H1",
+      "caseId": "EG1-H1"
+    },
+    {
+      "source": "EG1 H2",
+      "caseId": "EG1-H2"
+    },
+    {
+      "source": "EG1 H3",
+      "caseId": "EG1-H4"
+    },
+    {
+      "source": "EG1 H4",
+      "caseId": "EG1-H3"
+    },
+    {
+      "source": "EG1 AS1",
+      "caseId": "EG1-AS1"
+    },
+    {
+      "source": "EG1 AS2",
+      "caseId": "EG1-AS2"
+    },
+    {
+      "source": "EG1 AS3",
+      "caseId": "EG1-AS4"
+    },
+    {
+      "source": "EG1 AS4",
+      "caseId": "EG1-AS3"
+    },
+    {
+      "source": "EG1 AS5",
+      "caseId": "EG1-AS6"
+    },
+    {
+      "source": "EG1 AS6",
+      "caseId": "EG1-AS5"
+    },
+    {
+      "source": "EG1 S1",
+      "caseId": "EG1-S1"
+    },
+    {
+      "source": "EG1 S2",
+      "caseId": "EG1-S2"
+    },
+    {
+      "source": "EG1 S3",
+      "caseId": "EG1-S4"
+    },
+    {
+      "source": "EG1 S4",
+      "caseId": "EG1-S3"
+    },
+    {
+      "source": "EG1 S5",
+      "caseId": "EG1-S6"
+    },
+    {
+      "source": "EG1 S6",
+      "caseId": "EG1-S5"
+    },
+    {
+      "source": "EG1 Solved",
+      "caseId": "EG1-O-Solved"
+    },
+    {
+      "source": "EG1 Adjacent",
+      "caseId": "EG1-O-Adjacent"
+    },
+    {
+      "source": "EG1 Diagonal",
+      "caseId": "EG1-O-Diagonal"
+    }
+  ],
+  "sourceCommit": "34b5b16b47639ff21122c7ab46a044966d41ea00",
+  "counts": {
+    "CLL": 43,
+    "EG1": 43,
+    "EG2": 43
+  },
+  "algorithmCount": 486
+}

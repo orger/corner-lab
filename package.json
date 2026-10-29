@@ -1,0 +1,15 @@
+{
+  "name": "corner-lab",
+  "version": "1.5.1",
+  "private": true,
+  "type": "module",
+  "description": "Offline 2×2 and 5×5 practice for iPhone, the web and macOS",
+  "license": "GPL-3.0-only",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "dev": "python3 -m http.server 8765 --bind 127.0.0.1 --directory app",
+    "build:mac": "bash scripts/build-mac.sh",
+    "build:web": "node scripts/build-web.mjs",
+    "package:web": "node scripts/build-web.mjs && python3 scripts/package-web.py"
+  }
+}
