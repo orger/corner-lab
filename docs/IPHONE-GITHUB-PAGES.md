@@ -1,6 +1,16 @@
 # Corner Lab on iPhone and GitHub Pages
 
-The web version is prepared for `cubing.orger.org`. It has not been published by preparing these files. The existing `maths.orger.org` site can keep its own repository and settings.
+Web releases target `cubing.orger.org`. Use the update steps for the existing site, or the publishing steps for a fresh repository. The `maths.orger.org` site keeps its own repository and settings.
+
+## Update an existing installation
+
+Desktop and iPhone use the same feature code. After a new release, replace the
+changed source files in the existing GitHub repository and commit to **main**.
+The supplied workflow tests and publishes the updated site automatically.
+Keep the existing `.github/workflows/pages.yml`, Pages settings and DNS record.
+On the iPhone, reconnect and reopen Corner Lab; when **Update ready** appears,
+choose **Update** while no timer is running. The update keeps the device's data.
+For the Mac version, close Corner Lab and reopen the newly built app bundle.
 
 ## Publish the trainer
 

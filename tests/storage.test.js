@@ -60,6 +60,72 @@ test('Learning strategy support does not allow unknown strategies in any trainer
   }
 });
 
+test('ranked practice and Insights windows persist independently for every trainer and preset', () => {
+  for (const strategy of ['slowest', 'fastest']) {
+    const input = fixture();
+    input.lte.presets = [{ id: 'edges', name: 'Ranked edges', settings: structuredClone(input.lte.settings) }];
+    input.ltc.presets = [{ id: 'centres', name: 'Ranked centres', settings: structuredClone(input.ltc.settings) }];
+    const branches = [input, input.lte, input.ltc];
+    for (const [index, branch] of branches.entries()) {
+      branch.settings.strategy = strategy;
+      branch.settings.rankCount = [1, 3, 129][index];
+      branch.settings.insightsWindow = [1, 35, 1000][index];
+      branch.presets[0].settings.strategy = strategy;
+      branch.presets[0].settings.rankCount = [129, 5, 1][index];
+      branch.presets[0].settings.insightsWindow = [1000, 60, 1][index];
+    }
+    const before = structuredClone(input), output = validateData(input);
+    assert.deepEqual(output, before);
+    output.lte.settings.rankCount = 2;
+    output.settings.insightsWindow = 7;
+    assert.deepEqual(input, before, 'validation and later settings edits never mutate a backup');
+    assert.equal(output.settings.rankCount, 1);
+    assert.equal(output.ltc.settings.rankCount, 129);
+    assert.equal(output.lte.presets[0].settings.rankCount, 5);
+    assert.equal(output.lte.settings.insightsWindow, 35);
+    assert.equal(output.ltc.settings.insightsWindow, 1000);
+  }
+});
+
+test('older backups gain ranked-count and Insights defaults without changing histories or existing choices', () => {
+  const input = fixture();
+  input.lte.presets = [{ id: 'edges', name: 'Edges', settings: structuredClone(input.lte.settings) }];
+  input.ltc.presets = [{ id: 'centres', name: 'Centres', settings: structuredClone(input.ltc.settings) }];
+  const branches = data => [data, data.lte, data.ltc];
+  for (const branch of branches(input)) {
+    branch.settings.strategy = 'slow';
+    delete branch.settings.rankCount;
+    delete branch.settings.insightsWindow;
+    for (const preset of branch.presets) {
+      delete preset.settings.rankCount;
+      delete preset.settings.insightsWindow;
+    }
+  }
+  const before = structuredClone(input), output = validateData(input);
+  for (const [index, branch] of branches(output).entries()) {
+    const previous = branches(before)[index];
+    assert.deepEqual(branch.settings, { ...previous.settings, rankCount: 5, insightsWindow: 20 });
+    assert.deepEqual(branch.presets, previous.presets.map(p => ({ ...p, settings: { ...p.settings, rankCount: 5, insightsWindow: 20 } })));
+    assert.deepEqual(branch.attempts, previous.attempts);
+    assert.deepEqual(branch.preferences, previous.preferences);
+  }
+  assert.equal(output.version, 1);
+  assert.deepEqual(input, before);
+});
+
+test('rank counts and Insights windows reject invalid values in all trainers and saved practices', () => {
+  for (const [field, maximum, message] of [['rankCount', 129, /ranked algorithms/], ['insightsWindow', 1000, /Insights recent solves/]]) {
+    for (const value of [0, -1, 1.5, maximum + 1, NaN, Infinity, '5', '', null, undefined, true, [], {}]) {
+      for (const branchName of ['2x2', 'lte', 'ltc']) for (const preset of [false, true]) {
+        const input = fixture(), branch = branchName === '2x2' ? input : input[branchName];
+        if (!branch.presets.length) branch.presets = [{ id: 'practice', name: 'Practice', settings: structuredClone(branch.settings) }];
+        (preset ? branch.presets[0].settings : branch.settings)[field] = value;
+        assert.throws(() => validateData(input), message, `${branchName} ${preset ? 'preset' : 'settings'} ${field}: ${String(value)}`);
+      }
+    }
+  }
+});
+
 test('recent-speed window persists independently for all trainers and saved practices', () => {
   const input = fixture();
   assert.equal(input.settings.slowWindow, 20);

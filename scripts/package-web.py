@@ -8,7 +8,7 @@ from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SOURCE_ROOT_FILES = (
-    ".gitignore", "README.md", "LICENSE", "NOTICE", "package.json", "package-lock.json"
+    ".gitignore", "AGENTS.md", "README.md", "LICENSE", "NOTICE", "package.json", "package-lock.json"
 )
 SOURCE_DIRECTORIES = {
     "app": {".html", ".css", ".js", ".webmanifest", ".svg", ".png", ".jpg", ".jpeg", ".webp", ".woff", ".woff2"},

@@ -26,7 +26,7 @@ test('LTE defaults select every case and are independent of other fresh data', (
   const data = freshLTEData(), second = freshLTEData();
   assert.deepEqual(data.settings, {
     selectedCases: CASES5.map(item => item.id), orientations: [''],
-    strategy: 'uniform', slowWindow: 20, scrambleStyle: 'provided', record: true, showPreview: true,
+    strategy: 'uniform', slowWindow: 20, rankCount: 5, insightsWindow: 20, scrambleStyle: 'provided', record: true, showPreview: true,
     timingMode: 'simple', inspectionAudio: false,
   });
   assert.deepEqual(validateLTEData(data), data);

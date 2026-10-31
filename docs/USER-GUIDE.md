@@ -205,6 +205,8 @@ paused to recall the case. Choose Simple timing if you only want solve time.
 | Balanced | Every selected eligible case has equal probability; random repeats can occur |
 | Learning | Each selected case appears once in a shuffled batch; the next batch reshuffles all cases |
 | Speed | Cases with slower medians over their latest N clean solves receive more weight |
+| Slowest N algs | Equal draws from up to N selected algorithms with the slowest recent clean medians |
+| Fastest N algs | Equal draws from up to N selected algorithms with the fastest recent clean medians |
 | Recall | Recall/DNF flags, unusually slow results, and relative spread increase weight |
 | Coverage | Cases with fewer unassisted observations receive more weight |
 
@@ -231,10 +233,21 @@ by their recorded date. Flagged attempts do not use up a place in the window.
 A case with fewer than N clean solves uses all available clean solves; a case
 with none keeps a neutral weight. Inspection time is excluded.
 
-This window controls Speed practice selection. It does not trim your history,
+This window controls Speed and ranked practice selection. It does not trim your history,
 change the Insights summaries or set the window for the full-set progress chart.
 Those chart controls remain independent. Recall and Coverage use matching history
 as before.
+
+For **Slowest N algs** or **Fastest N algs**, set **Number of algorithms (N)**
+to choose the pool size (default **5**, range **1–129**), then set **Recent clean
+solves per algorithm** to choose the ranking lookback (default **20**, range
+**1–1,000**). The pool is drawn from your selected cases and preferred algorithms,
+using the same condition filters and recent clean medians as Speed. Each member
+of the pool is equally likely. Rankings update as results are recorded; they do
+not change your underlying case selection. Ties keep catalog order. If fewer
+than N selected algorithms have matching clean times, all measured ones are
+used. Unmeasured cases are excluded once matching times exist; if none exist,
+all selected cases can appear until there are times to rank.
 
 Speed and Recall reduce the influence of small samples. Every eligible case
 retains a positive chance of appearing. Focus uses history matching the selected
@@ -244,7 +257,7 @@ selected first-face cases. Timing mode also matches; inspection timing additiona
 matches the audio setting. Focus is not limited to the current session.
 Insights filters are separate from these practice settings.
 
-**Save practice** stores the current case selection, conditions, mode, focus, the Speed clean-solve window,
+**Save practice** stores the current case selection, conditions, mode, focus, the clean-solve window, ranked pool size, Insights lookback,
 finish selection, timing mode, inspection-audio choice, and recording/preview settings under a name. Load saved
 practices from **Settings**. Algorithm preferences are global: a saved practice
 uses your current preferred algorithm for each of its cases. Deleting a saved
@@ -285,6 +298,7 @@ been removed.
 
 | Metric | Calculation and interpretation |
 | --- | --- |
+| Clean average | Arithmetic mean of clean solve times in the displayed window |
 | Clean median | Median of clean times; a robust estimate of typical execution |
 | MAD | Median of the absolute distances of clean times from their median; lower means steadier execution |
 | P90 | The 90th percentile of all positive unassisted times, including marked failures; describes the slow end |
@@ -292,6 +306,17 @@ been removed.
 
 Percentiles interpolate between adjacent sorted observations. A result carrying
 both Recall lapse and DNF counts once in the lapse rate.
+
+In **Where to focus**, set **Recent solves per algorithm** to choose the table's
+lookback (default **20**, range **1–1,000**). It takes the latest matching results
+by date separately for each case and exact algorithm version, after applying
+Insights filters. If fewer exist, it uses those available. Recall lapses, DNFs
+and assisted attempts count toward this recent-results window, so lapse rates
+describe recent practice; the clean average and median exclude those flagged
+results. Grouping by case, set or conditions combines these recent algorithm
+windows. Grouping by algorithm keeps historical move-text revisions separate.
+This setting is saved independently for each trainer. It does not shorten the
+full history, change chart windows, or limit CSV exports or filtered resets.
 
 After at least **five clean observations** in the displayed group, an unmarked
 clean result counts as unusually slow when it exceeds:

@@ -114,7 +114,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     }
 
     @objc private func showAbout() {
-        NSApp.orderFrontStandardAboutPanel(options: [.applicationName: "Corner Lab", .applicationVersion: "1.5.1", .credits: NSAttributedString(string: "2×2 CLL/EG and 5×5 last-two-edges / last-two-centres practice.\nYour algorithms and practice history stay on this Mac.")])
+        NSApp.orderFrontStandardAboutPanel(options: [.applicationName: "Corner Lab", .applicationVersion: "1.6.0", .credits: NSAttributedString(string: "2×2 CLL/EG and 5×5 last-two-edges / last-two-centres practice.\nYour algorithms and practice history stay on this Mac.")])
     }
 
     @objc private func reload() { webView.reload() }
@@ -190,7 +190,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
                         self.reply(id, value: value)
                     } catch { self.reply(id, error: error.localizedDescription) }
                 }
-            case "info": reply(id, value: ["platform": "macOS", "dataPath": storeURL.path, "version": "1.5.1"])
+            case "info": reply(id, value: ["platform": "macOS", "dataPath": storeURL.path, "version": "1.6.0"])
             default: reply(id, error: "Unknown native storage request.")
             }
         } catch { reply(id, error: error.localizedDescription) }

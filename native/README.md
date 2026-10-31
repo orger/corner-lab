@@ -15,7 +15,7 @@ For native runtime checks, `bash scripts/test-native.sh` launches a separate tes
 - `exportData(data)` opens a macOS Save panel and resolves to `{ exported: true }`, or `null` if cancelled.
 - `exportText(filename, content, contentType = 'text/csv')` opens a macOS Save panel for UTF-8 text, useful for CSV. It resolves to `{ exported: true }`, or `null` if cancelled.
 - `importData()` opens a macOS Open panel, parses a JSON file and returns its contents, or `null` if cancelled. The UI must validate its own schema and confirm replacement before calling `save()`.
-- `info()` returns `{ platform: 'macOS', dataPath, version: '1.5.1' }`.
+- `info()` returns `{ platform: 'macOS', dataPath, version: '1.6.0' }`.
 
 The app also dispatches `cornerlab-native-ready` on `window` at DOMContentLoaded. Calls use `window.webkit.messageHandlers.storage.postMessage({id, action, payload})` internally, with native responses sent through `window.__cornerlabNativeReply`.
 

@@ -2,6 +2,10 @@
 export const MIN_SAMPLES = 5;
 export const DEFAULT_SPEED_WINDOW = 20;
 export const MAX_SPEED_WINDOW = 1000;
+export const DEFAULT_RANK_COUNT = 5;
+export const MAX_RANK_COUNT = 129;
+export const DEFAULT_INSIGHTS_WINDOW = 20;
+export const MAX_INSIGHTS_WINDOW = 1000;
 
 export function quantile(values, proportion) {
   if (!values.length) return null;
@@ -162,20 +166,78 @@ export function createLearningSampler({ random = Math.random } = {}) {
   return { next, reset, snapshot: () => ({ batchNumber, position, total }) };
 }
 
-/** Callers scope algorithm and conditions before choosing the latest clean
- * results. Failed/assisted solves never consume a window slot. Timestamps take
- * priority over storage order; ties (and undated legacy input) keep input order.
- * Undated results precede dated ones. Invalid helper inputs use the default;
- * persisted settings and UI inputs are validated separately.
- */
-function recentCleanAttempts(attempts, slowWindow) {
-  const limit = Number.isInteger(slowWindow) && slowWindow >= 1 && slowWindow <= MAX_SPEED_WINDOW
-    ? slowWindow : DEFAULT_SPEED_WINDOW;
+const recordedAttempt = attempt => attempt && typeof attempt === 'object' && !Array.isArray(attempt);
+const boundedSetting = (value, fallback, maximum) => Number.isInteger(value) && value >= 1 && value <= maximum ? value : fallback;
+const chronological = (a, b) => a.timestamp - b.timestamp || a.index - b.index;
+function indexedAttempts(attempts) {
   return attempts.map((attempt, index) => ({ attempt, index }))
-    .filter(({ attempt }) => attempt && typeof attempt === 'object' && validTime(attempt) && unassisted(attempt) && !explicitLapse(attempt))
-    .map(item => ({ ...item, timestamp: Number.isFinite(Date.parse(item.attempt.createdAt)) ? Date.parse(item.attempt.createdAt) : -Infinity }))
-    .sort((a, b) => a.timestamp - b.timestamp || a.index - b.index)
-    .slice(-limit).map(({ attempt }) => attempt);
+    .filter(({ attempt }) => recordedAttempt(attempt))
+    .map(item => ({ ...item, timestamp: Number.isFinite(Date.parse(item.attempt.createdAt)) ? Date.parse(item.attempt.createdAt) : -Infinity }));
+}
+
+/** The latest recorded outcomes in chronological order. All outcomes consume a
+ * slot, so recent failures remain visible in Insights. Dated records take
+ * priority over undated legacy input; equal dates use original storage order.
+ * Invalid limits use the default. Inputs and their order are never changed.
+ */
+export function recentAttempts(attempts = [], windowSize = DEFAULT_INSIGHTS_WINDOW) {
+  const limit = boundedSetting(windowSize, DEFAULT_INSIGHTS_WINDOW, MAX_INSIGHTS_WINDOW);
+  return indexedAttempts(attempts).sort(chronological).slice(-limit).map(item => item.attempt);
+}
+
+/** Each exact case/algorithm gets its own recent window before Insights groups
+ * by case, set, grip, or another field. Algorithm text distinguishes historical
+ * revisions that reuse an ID. Filtering must happen before this helper; the
+ * returned union retains input order and references without editing history.
+ */
+export function recentAlgorithmAttempts(attempts = [], windowSize = DEFAULT_INSIGHTS_WINDOW) {
+  const limit = boundedSetting(windowSize, DEFAULT_INSIGHTS_WINDOW, MAX_INSIGHTS_WINDOW);
+  const groups = new Map();
+  for (const item of indexedAttempts(attempts)) {
+    const attempt = item.attempt;
+    const key = JSON.stringify([attempt.caseId ?? null, attempt.algorithmId ?? null, attempt.algorithm ?? null]);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  }
+  const selected = new Set();
+  for (const group of groups.values()) for (const item of group.sort(chronological).slice(-limit)) selected.add(item.index);
+  return attempts.filter((_, index) => selected.has(index));
+}
+
+/** Callers scope algorithm and conditions before choosing the latest clean
+ * results. Failed/assisted solves never consume a speed/ranking window slot.
+ * Timestamps take priority over storage order; ties keep input order. Invalid
+ * helper inputs use the default; settings and UI validate separately.
+ */
+export function recentCleanAttempts(attempts = [], slowWindow = DEFAULT_SPEED_WINDOW) {
+  const limit = boundedSetting(slowWindow, DEFAULT_SPEED_WINDOW, MAX_SPEED_WINDOW);
+  return indexedAttempts(attempts)
+    .filter(({ attempt }) => validTime(attempt) && unassisted(attempt) && !explicitLapse(attempt))
+    .sort(chronological).slice(-limit).map(item => item.attempt);
+}
+
+/** Restrict a practice pool to the N fastest/slowest measured selected cases.
+ * The rank uses each case's recent clean median, with stable catalog-order ties.
+ * Callers supply only histories matching their current algorithm and training
+ * conditions. Cases without a clean time are excluded while any measured case
+ * exists. With no measured cases, all selected cases remain available to build
+ * a baseline. The returned objects are the caller's current case objects.
+ */
+export function rankedCases(cases = [], attempts = [], strategy = 'slowest', rankCount = DEFAULT_RANK_COUNT, slowWindow = DEFAULT_SPEED_WINDOW) {
+  const limit = boundedSetting(rankCount, DEFAULT_RANK_COUNT, MAX_RANK_COUNT);
+  const selected = new Map();
+  for (const item of cases) {
+    const id = item?.id ?? item?.caseId ?? item;
+    if (typeof id === 'string' && id && !selected.has(id)) selected.set(id, item);
+  }
+  const groups = groupAttempts(attempts.filter(recordedAttempt));
+  const measured = [...selected].map(([id, item], index) => ({
+    item, index, typical: summarize(recentCleanAttempts(groups.get(id) ?? [], slowWindow)).median,
+  })).filter(item => item.typical !== null);
+  if (!measured.length) return [...selected.values()];
+  const direction = strategy === 'fastest' ? 1 : -1;
+  return measured.sort((a, b) => direction * (a.typical - b.typical) || a.index - b.index)
+    .slice(0, limit).map(item => item.item);
 }
 
 /**
@@ -205,8 +267,14 @@ export function caseWeight(attempts, strategy = 'uniform', baseline = 5, slowWin
   return 1;
 }
 
-export function chooseWeightedCase(cases, attempts = [], strategy = 'uniform', random = Math.random, slowWindow = DEFAULT_SPEED_WINDOW) {
+export function chooseWeightedCase(cases, attempts = [], strategy = 'uniform', random = Math.random, slowWindow = DEFAULT_SPEED_WINDOW, rankCount = DEFAULT_RANK_COUNT) {
   if (!cases.length) return null;
+  if (strategy === 'slowest' || strategy === 'fastest') {
+    const pool = rankedCases(cases, attempts, strategy, rankCount, slowWindow);
+    const draw = random();
+    const bounded = Number.isFinite(draw) ? Math.max(0, Math.min(1 - Number.EPSILON, draw)) : 0;
+    return pool[Math.floor(bounded * pool.length)] ?? null;
+  }
   const groups = groupAttempts(attempts);
   const medians = cases.map(item => {
     const history = groups.get(item.id ?? item.caseId ?? item) ?? [];

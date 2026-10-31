@@ -1,12 +1,12 @@
 import { CASES, GROUPS, SETS } from './catalog.js';
-import { DEFAULT_SPEED_WINDOW, MAX_SPEED_WINDOW } from './stats.js';
+import { DEFAULT_SPEED_WINDOW, MAX_SPEED_WINDOW, DEFAULT_RANK_COUNT, MAX_RANK_COUNT, DEFAULT_INSIGHTS_WINDOW, MAX_INSIGHTS_WINDOW } from './stats.js';
 import { normalizeAlg, validateAlternative } from './cube.js';
 import { FIRST_FACE_CASES, DEFAULT_FIRST_FACE_CASE_IDS } from './first-face-cases.js';
 import { freshLTEData, validateLTEData, freshLTCData, validateLTCData } from './lte-storage.js';
 
 export const SCHEMA_VERSION=1;
 const KEY='corner-lab-v1';
-export function freshData() { return {version:SCHEMA_VERSION,trainer:'2x2',settings:{selectedCases:[],preAuf:['','U',"U'",'U2'],postAuf:['','U',"U'",'U2'],bottomAuf:['','D','D2',"D'"],orientations:[''],colors:['white'],mode:'last-layer',timingMode:'simple',inspectionAudio:false,strategy:'uniform',slowWindow:DEFAULT_SPEED_WINDOW,finishIds:[...DEFAULT_FIRST_FACE_CASE_IDS],record:true,showPreview:true},preferences:{},attempts:[],presets:[],lte:freshLTEData(),ltc:freshLTCData()}; }
+export function freshData() { return {version:SCHEMA_VERSION,trainer:'2x2',settings:{selectedCases:[],preAuf:['','U',"U'",'U2'],postAuf:['','U',"U'",'U2'],bottomAuf:['','D','D2',"D'"],orientations:[''],colors:['white'],mode:'last-layer',timingMode:'simple',inspectionAudio:false,strategy:'uniform',slowWindow:DEFAULT_SPEED_WINDOW,rankCount:DEFAULT_RANK_COUNT,insightsWindow:DEFAULT_INSIGHTS_WINDOW,finishIds:[...DEFAULT_FIRST_FACE_CASE_IDS],record:true,showPreview:true},preferences:{},attempts:[],presets:[],lte:freshLTEData(),ltc:freshLTCData()}; }
 
 const casesById = new Map(CASES.map(item => [item.id, item]));
 const finishIds = new Set(FIRST_FACE_CASES.map(item => item.id));
@@ -26,7 +26,7 @@ function isLegacyFinish(value) {
 }
 const modes = ['last-layer', 'one-look'];
 const timingModes = ['simple', 'inspection'];
-const strategies = ['uniform', 'learning', 'slow', 'inconsistent', 'new'];
+const strategies = ['uniform', 'learning', 'slow', 'slowest', 'fastest', 'inconsistent', 'new'];
 const conditions = {
   preAuf: ['', 'U', "U'", 'U2'], postAuf: ['', 'U', "U'", 'U2'],
   bottomAuf: ['', 'D', 'D2', "D'"],
@@ -83,14 +83,20 @@ function speedWindow(value, label) {
   if (!Number.isInteger(value) || value < 1 || value > MAX_SPEED_WINDOW) fail(`Invalid ${label}: expected a whole number from 1 to ${MAX_SPEED_WINDOW}.`);
   return value;
 }
+function boundedCount(value, maximum, label) {
+  if (!Number.isInteger(value) || value < 1 || value > maximum) fail(`Invalid ${label}: expected a whole number from 1 to ${maximum}.`);
+  return value;
+}
 function settings(value, label) {
-  object(value, label, ['selectedCases', 'preAuf', 'postAuf', 'bottomAuf', 'orientations', 'colors', 'mode', 'timingMode', 'inspectionAudio', 'strategy', 'slowWindow', 'finishIds', 'record', 'showPreview']);
+  object(value, label, ['selectedCases', 'preAuf', 'postAuf', 'bottomAuf', 'orientations', 'colors', 'mode', 'timingMode', 'inspectionAudio', 'strategy', 'slowWindow', 'rankCount', 'insightsWindow', 'finishIds', 'record', 'showPreview']);
   const result = {
     selectedCases: uniqueStrings(value.selectedCases, `${label} cases`, new Set(casesById.keys()), 0, CASES.length),
     finishIds: selectedFinishes(value.finishIds, `${label} finishes`),
     mode: choice(value.mode, modes, `${label} mode`),
     strategy: choice(value.strategy, strategies, `${label} strategy`),
     slowWindow: own(value, 'slowWindow') ? speedWindow(value.slowWindow, `${label} recent clean solves`) : DEFAULT_SPEED_WINDOW,
+    rankCount: own(value, 'rankCount') ? boundedCount(value.rankCount, MAX_RANK_COUNT, `${label} ranked algorithms`) : DEFAULT_RANK_COUNT,
+    insightsWindow: own(value, 'insightsWindow') ? boundedCount(value.insightsWindow, MAX_INSIGHTS_WINDOW, `${label} Insights recent solves`) : DEFAULT_INSIGHTS_WINDOW,
   };
   for (const [key, values] of Object.entries(conditions)) result[key] = uniqueStrings(
     key === 'bottomAuf' && !own(value, key) ? values : value[key], `${label} ${key}`, new Set(values), 1, values.length);

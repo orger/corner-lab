@@ -4,7 +4,7 @@ An offline trainer for Mac and iPhone for deliberate 2×2 practice—CLL, EG1, E
 
 ## Run on iPhone
 
-The touch-friendly web app is prepared for GitHub Pages at `cubing.orger.org`. Publishing the repository and configuring the domain are still required; these local changes do not make the site live.
+Web releases target GitHub Pages at `cubing.orger.org`. Updating the source in the existing repository publishes a new version; an installed iPhone app offers an Update button when it is ready.
 
 Once published, open the site in Safari and use **Share → Add to Home Screen**. Open the resulting Corner Lab icon while online and wait for the offline-ready status before practising without a connection. All three trainers run on the phone, and each device keeps its own history. Use full JSON backups to transfer history from the Mac or protect it against cleared browser data; there is no automatic device sync.
 
@@ -23,6 +23,10 @@ For **One-look**, select first-face patterns from the supplied **2x2 FF Algorith
 **Learning** practice presents every selected case once per shuffled batch, then reshuffles the whole selection. A batch counter tracks your place, and training conditions still vary. Each trainer maintains its own batch while the app is running.
 
 **Speed** practice uses the median of each case’s latest N clean solves matching the current algorithms and conditions. Adjust **Clean solves per case (N)** under Practice focus (default 20; 1–1,000). Fewer clean solves use what is available. Each trainer and saved practice remembers its own N; the progress chart window is separate.
+
+**Slowest N algs** and **Fastest N algs** draw equally from up to N of your selected algorithms, ranked by recent clean median time. Set **Number of algorithms (N)** (default 5) and **Recent clean solves per algorithm** (default 20) separately. Rankings use your current preferred algorithms and practice conditions and update after each result. Cases without matching clean times are excluded when measured cases exist; with no matching times, the trainer mixes your selection until a baseline exists.
+
+The **Where to focus** table in Insights uses **Recent solves per algorithm** (default 20; 1–1,000), independently of the practice lookback. Each algorithm version gets its own window after filters; flagged results count toward this window, while the displayed clean average and median exclude failures and assistance. Grouping combines those recent windows. Charts, full history, CSV exports and resets retain all matching results.
 
 **Insights** separates clean median speed, robust spread (MAD), slow-tail times (P90), and lapse rate. Filter by case, pattern, set, algorithm version, practice/timing mode, inspection cues, color, both U-AUFs, bottom-layer rotation, starting grip, first-face case/finish, session, or date. Inspection seconds are shown separately from solve time, and CSV exports retain timing/audio metadata. “Only selected practice cases” supports any custom subset. Individual results can be inspected and relabelled, and matching statistics can be reset without removing algorithm preferences.
 
@@ -57,6 +61,8 @@ See [sources and case conventions](docs/SOURCES.md). Source names follow Alg-Tra
 ## Development
 
 The interface uses browser-native ES modules, HTML, and CSS. The macOS shell uses Swift, AppKit, and WKWebView. There are no third-party runtime package dependencies.
+
+Desktop and mobile features share `app/`. Future features should be implemented and checked on both platforms and across the applicable trainers. See [AGENTS.md](AGENTS.md).
 
 ```sh
 npm test

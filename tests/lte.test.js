@@ -23,7 +23,7 @@ function controller(settings = {}, random = () => 0.25, { canSave = () => true }
   data.initialized = true;
   Object.assign(data.lte.settings, { selectedCases: [firstCase.id], showPreview: false }, settings);
   const nodes = new Map([['#lte-timer-display', { innerHTML: '' }], ['#lte-library-results', { innerHTML: '' }]]);
-  const frames = new Map(), saves = [], toasts = [], audioCalls = [], dialogs = [];
+  const frames = new Map(), saves = [], toasts = [], audioCalls = [], dialogs = [], downloads = [];
   let time = 0, frameId = 0, page = 'train', renders = 0, trainer;
   const document = { querySelector: selector => nodes.get(selector) || null, activeElement: null };
   const modal = (title, body, footer) => {
@@ -35,7 +35,7 @@ function controller(settings = {}, random = () => 0.25, { canSave = () => true }
     getData: () => data, persist: () => saves.push(structuredClone(data)), canSave,
     render: () => { renders++; trainer?.afterRender(); }, toast: message => toasts.push(message),
     navigate: value => { page = value; }, modal, closeModal,
-    exportBackup: () => {}, importBackup: () => {}, download: () => {},
+    exportBackup: () => {}, importBackup: () => {}, download: (...args) => downloads.push(args),
     document, window: { confirm: () => true }, now: () => time, random,
     requestFrame: callback => { const id = ++frameId; frames.set(id, callback); return id; },
     cancelFrame: id => frames.delete(id),
@@ -43,7 +43,7 @@ function controller(settings = {}, random = () => 0.25, { canSave = () => true }
   });
   trainer.next(false);
   return {
-    trainer, data, nodes, saves, toasts, audioCalls, dialogs, closeModal,
+    trainer, data, nodes, saves, toasts, audioCalls, dialogs, downloads, closeModal,
     setTime: value => { time = value; }, snapshot: trainer.snapshot,
     renderCount: () => renders, currentPage: () => page,
     frame: () => { const next = frames.entries().next().value; if (next) { frames.delete(next[0]); next[1](); } },
@@ -476,4 +476,134 @@ test('Learning safely handles empty and single-case edge selections', () => {
   }
   ui.trainer.reset();
   assert.deepEqual(ui.snapshot().current.learningBatch, { batchNumber: 1, position: 1, total: 1 });
+});
+
+const caseRecords = (item, times, prefix = item.id, algorithm = defaultAlgorithm(item)) => times.map((seconds, index) => attempt({
+  id: `${prefix}-${index}`, caseId: item.id, group: item.group,
+  algorithmId: algorithm.id, algorithm: algorithm.alg,
+  seconds, createdAt: new Date(Date.UTC(2026, 9, index + 1)).toISOString(),
+}));
+
+const focusTable = html => {
+  const start = html.indexOf('<h2>Where to focus</h2>');
+  return html.slice(start, html.indexOf('</table>', start) + 8);
+};
+
+test('ranked LTE modes use only the fastest or slowest N matching preferred algorithms without changing selections', async () => {
+  const [first, second, third, unmeasured] = CASES5;
+  let draw = .25;
+  const ids = [first, second, third, unmeasured].map(item => item.id);
+  const ui = controller({ selectedCases: ids, strategy: 'slowest', rankCount: 1, slowWindow: 1 }, () => draw);
+  ui.data.lte.attempts = [
+    ...caseRecords(first, [30, 1]), ...caseRecords(second, [6, 6]), ...caseRecords(third, [10, 10]),
+    attempt({ id: 'stale-version', caseId: first.id, group: first.group, algorithmId: defaultAlgorithm(first).id, algorithm: 'R U2', seconds: 999 }),
+    attempt({ id: 'other-grip', caseId: third.id, group: third.group, algorithmId: defaultAlgorithm(third).id, algorithm: defaultAlgorithm(third).alg, orientation: 'y', seconds: 999 }),
+  ];
+  const history = structuredClone(ui.data.lte.attempts);
+  ui.trainer.next(false);
+  assert.equal(ui.snapshot().current.case.id, third.id);
+  assert.match(ui.trainer.content('train'), /Slowest N algs/);
+  assert.match(ui.trainer.content('train'), /Number of algorithms \(N\)/);
+  assert.match(ui.trainer.content('train'), /slowest 1 measured algorithm/);
+  const displayed = ui.snapshot().current;
+  await ui.change({ lteSetting: 'strategy' }, 'fastest');
+  assert.equal(ui.snapshot().current, displayed, 'focus changes keep the setup currently on screen');
+  ui.trainer.next(false);
+  assert.equal(ui.snapshot().current.case.id, first.id, 'the old 30s result does not override the latest clean result');
+  await ui.change({ lteSetting: 'rankCount' }, '2', { type: 'number' });
+  const seen = new Set();
+  for (const value of [0, .49, .5, .99]) { draw = value; ui.trainer.next(false); seen.add(ui.snapshot().current.case.id); }
+  assert.deepEqual([...seen], [first.id, second.id]);
+  assert.deepEqual(ui.data.lte.settings.selectedCases, ids);
+  assert.deepEqual(ui.data.lte.attempts, history);
+  assert.match(ui.trainer.content('train'), /fastest 2 measured algorithms/);
+});
+
+test('ranked LTE controls explain an unmeasured baseline and validate both configurable counts while idle', async () => {
+  const ui = controller({ selectedCases: CASES5.slice(0, 3).map(item => item.id), strategy: 'fastest', rankCount: 5, insightsWindow: 20 });
+  assert.ok(ui.snapshot().current);
+  assert.match(ui.trainer.content('train'), /All selected cases appear equally until a ranking can be built/);
+  for (const [setting, initial, invalid] of [['rankCount', 5, ['', '0', '-1', '1.5', '130']], ['insightsWindow', 20, ['', '0', '-1', '1.5', '1001']]]) {
+    for (const value of invalid) {
+      const saved = ui.saves.length;
+      await ui.change({ lteSetting: setting }, value, { type: 'number' });
+      assert.equal(ui.data.lte.settings[setting], initial);
+      assert.equal(ui.saves.length, saved);
+      assert.match(ui.toasts.at(-1), /whole number/);
+    }
+  }
+  await ui.change({ lteSetting: 'rankCount' }, '3', { type: 'number' });
+  await ui.change({ lteSetting: 'insightsWindow' }, '7', { type: 'number' });
+  assert.equal(validateData(ui.saves.at(-1)).lte.settings.rankCount, 3);
+  assert.equal(validateData(ui.saves.at(-1)).lte.settings.insightsWindow, 7);
+  ui.nodes.set('#lte-preset-name', { value: 'Lucky cases' });
+  await ui.click('lte-save-preset');
+  const preset = ui.data.lte.presets.at(-1);
+  ui.data.lte.settings.rankCount = 9; ui.data.lte.settings.insightsWindow = 10;
+  await ui.click('lte-load-preset', { id: preset.id });
+  assert.equal(ui.data.lte.settings.rankCount, 3);
+  assert.equal(ui.data.lte.settings.insightsWindow, 7);
+  await ui.click('lte-timer');
+  assert.match(ui.trainer.content('train'), /data-lte-setting="rankCount" value="3" disabled/);
+  for (const setting of ['rankCount', 'insightsWindow', 'slowWindow']) {
+    const before = ui.data.lte.settings[setting], saved = ui.saves.length;
+    await ui.change({ lteSetting: setting }, '1', { type: 'number' });
+    assert.equal(ui.data.lte.settings[setting], before);
+    assert.equal(ui.saves.length, saved);
+  }
+});
+
+test('LTE Insights windows each algorithm before grouping and keeps full history, exports and reset scope', async () => {
+  const [first, second] = CASES5;
+  const alternative = first.algorithms.find(algorithm => algorithm.id !== first.defaultAlgorithmId);
+  assert.ok(alternative);
+  const ui = controller({ selectedCases: [first.id, second.id], insightsWindow: 2 });
+  ui.data.lte.attempts = [
+    ...caseRecords(first, [100, 2, 4], 'first'),
+    ...caseRecords(first, [200, 6, 8], 'alternative', alternative),
+    ...caseRecords(second, [300, 10, 12], 'second'),
+  ];
+  const history = structuredClone(ui.data.lte.attempts);
+  const initial = focusTable(ui.trainer.content('insights'));
+  assert.match(initial, /Recent solves per algorithm/);
+  assert.match(initial, /<th>Clean average<\/th><th>Clean median<\/th>/);
+  assert.match(initial, new RegExp(`<td>${first.id}[^<]*<\\/td><td>4<\\/td><td>5\\.00s<\\/td><td>5\\.00s<\\/td>`));
+  assert.match(initial, new RegExp(`<td>${second.id}[^<]*<\\/td><td>2<\\/td><td>11\\.00s<\\/td>`));
+  await ui.change({ lteSetting: 'insightsWindow' }, '1', { type: 'number' });
+  const narrowed = focusTable(ui.trainer.content('insights'));
+  assert.match(narrowed, new RegExp(`<td>${first.id}[^<]*<\\/td><td>2<\\/td><td>6\\.00s<\\/td>`));
+  assert.equal(ui.trainer.filtered().length, 9);
+  assert.deepEqual(ui.data.lte.attempts, history);
+  await ui.click('lte-csv');
+  assert.equal(ui.downloads.at(-1)[1].split('\n').length, 10, 'CSV retains all nine original results');
+  await ui.click('lte-reset');
+  assert.match(ui.dialogs.at(-1).body, /<strong>9<\/strong>/, 'reset still describes the complete filtered history');
+});
+
+test('LTE recent Insights includes failures and assisted results in its lookback count', () => {
+  const ui = controller({ insightsWindow: 2 });
+  ui.data.lte.attempts = [
+    ...caseRecords(firstCase, [100, 2, 40, 30]),
+  ];
+  ui.data.lte.attempts[2].dnf = true;
+  ui.data.lte.attempts[3].assisted = true;
+  const table = focusTable(ui.trainer.content('insights'));
+  assert.match(table, /<td>2<\/td><td>—s<\/td><td>—s<\/td><td>—s<\/td><td>40\.00s<\/td><td>100%<\/td>/);
+  assert.equal(ui.trainer.filtered().length, 4);
+  assert.match(ui.trainer.content('insights'), /4 results match your filters/);
+});
+
+test('LTE algorithm Insights keeps changed move text under the same ID in separate recent-window rows', async () => {
+  const ui = controller({ insightsWindow: 1 });
+  const current = defaultAlgorithm(firstCase);
+  ui.data.lte.attempts = [
+    ...caseRecords(firstCase, [100, 60], 'old-revision', { ...current, alg: "R U R'" }),
+    ...caseRecords(firstCase, [20, 4], 'current-revision'),
+  ];
+  await ui.change({}, 'algorithmId', { id: 'lte-insight-group' });
+  const table = focusTable(ui.trainer.content('insights'));
+  assert.match(table, /Historical algorithm · R U R&#39;<\/td><td>1<\/td><td>60\.00s<\/td>/);
+  assert.match(table, /<td>1<\/td><td>4\.00s<\/td><td>4\.00s<\/td>/);
+  assert.equal((table.match(/<tr><td>/g)||[]).length, 2, 'each move-text revision has one row with its own lookback');
+  assert.equal(ui.trainer.filtered().length, 4, 'the summary does not change full history');
 });

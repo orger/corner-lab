@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { summarize, summarizeInspection, caseWeight, chooseWeightedCase, createLearningSampler, filterAttempts, resetAttempts, DEFAULT_SPEED_WINDOW, MAX_SPEED_WINDOW } from '../app/stats.js';
+import { summarize, summarizeInspection, caseWeight, chooseWeightedCase, createLearningSampler, filterAttempts, resetAttempts,
+  rankedCases, recentAttempts, recentAlgorithmAttempts, recentCleanAttempts,
+  DEFAULT_SPEED_WINDOW, MAX_SPEED_WINDOW, DEFAULT_RANK_COUNT, MAX_RANK_COUNT, DEFAULT_INSIGHTS_WINDOW, MAX_INSIGHTS_WINDOW } from '../app/stats.js';
 
 const attempts = times => times.map((seconds, index) => ({ id: `attempt-${index}`, caseId: 'CLL-H1', set: 'CLL', group: 'H', seconds, createdAt: '2026-09-10T10:00:00Z' }));
 
@@ -185,6 +187,129 @@ test('window changes leave other focus strategies unchanged and invalid helper v
   for (const window of [0, -1, 1.5, NaN, Infinity, '5', null, MAX_SPEED_WINDOW + 1]) {
     assert.equal(caseWeight(history, 'slow', 5, window), caseWeight(history, 'slow', 5, DEFAULT_SPEED_WINDOW));
   }
+});
+
+test('ranked pools use only selected measured cases, preserving catalog order for tied medians', () => {
+  const choices = ['b', 'a', 'c', 'unmeasured', 'tie'].map(id => ({ id }));
+  const history = [
+    { caseId: 'a', seconds: 2 }, { caseId: 'b', seconds: 4 },
+    { caseId: 'c', seconds: 10 }, { caseId: 'tie', seconds: 4 },
+    { caseId: 'outside-selection', seconds: 1000 },
+    { caseId: 'unmeasured', seconds: 50, recallFail: true },
+    { caseId: 'unmeasured', seconds: 1, assisted: true },
+  ];
+  const before = structuredClone({ choices, history });
+  assert.deepEqual(rankedCases(choices, history, 'slowest', 2).map(item => item.id), ['c', 'b']);
+  assert.deepEqual(rankedCases(choices, history, 'fastest', 2).map(item => item.id), ['a', 'b']);
+  assert.deepEqual(rankedCases(choices, history, 'fastest', 99).map(item => item.id), ['a', 'b', 'tie', 'c']);
+  assert.equal(rankedCases(choices, history, 'slowest', 1)[0], choices[2]);
+  assert.deepEqual(rankedCases([...choices, choices[0]], history, 'slowest', 99).map(item => item.id), ['c', 'b', 'tie', 'a']);
+  assert.deepEqual({ choices, history }, before, 'ranking never modifies input records or selections');
+});
+
+test('rankings respond to the recent clean window and failures do not replace a clean time', () => {
+  const choices = [{ id: 'improved' }, { id: 'steady' }];
+  const history = [
+    ...attempts([20, 20, 20, 3]).map(item => ({ ...item, caseId: 'improved' })),
+    ...attempts([7, 7, 7, 7]).map(item => ({ ...item, caseId: 'steady' })),
+    { caseId: 'improved', seconds: 100, recallFail: true },
+    { caseId: 'improved', seconds: 100, dnf: true },
+    { caseId: 'improved', seconds: 100, assisted: true },
+  ];
+  assert.equal(rankedCases(choices, history, 'slowest', 1, 1)[0].id, 'steady');
+  assert.equal(rankedCases(choices, history, 'slowest', 1, 20)[0].id, 'improved');
+  assert.equal(rankedCases(choices, history, 'fastest', 1, 1)[0].id, 'improved');
+  assert.equal(rankedCases(choices, history, 'fastest', 1, 20)[0].id, 'steady');
+});
+
+test('ranked sampling stays inside its pool and samples its members uniformly', () => {
+  const choices = ['a', 'b', 'c', 'd'].map(id => ({ id }));
+  const history = choices.map((item, i) => ({ caseId: item.id, seconds: i + 1 }));
+  for (const [strategy, expected] of [['fastest', ['a', 'b']], ['slowest', ['d', 'c']]]) {
+    const draws = Array.from({ length: 100 }, (_, i) => chooseWeightedCase(choices, history, strategy, () => i / 100, 20, 2).id);
+    assert.deepEqual([...new Set(draws)], expected);
+    assert.equal(draws.filter(id => id === expected[0]).length, 50);
+    assert.equal(draws.filter(id => id === expected[1]).length, 50);
+    for (const value of [-1, 0, NaN, Infinity]) {
+      assert.equal(chooseWeightedCase(choices, history, strategy, () => value, 20, 2).id, expected[0]);
+    }
+    for (const value of [1, 5]) {
+      assert.equal(chooseWeightedCase(choices, history, strategy, () => value, 20, 2).id, expected[1]);
+    }
+  }
+});
+
+test('unmeasured ranked practice builds a baseline without assigning fictitious slow or fast times', () => {
+  const choices = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+  const failedHistory = [{ caseId: 'b', seconds: 500, recallFail: true }];
+  for (const strategy of ['slowest', 'fastest']) {
+    assert.deepEqual(rankedCases([], failedHistory, strategy, 1), []);
+    assert.deepEqual(rankedCases(choices, failedHistory, strategy, 1), choices);
+    assert.equal(chooseWeightedCase(choices, failedHistory, strategy, () => 1, 20, 1), choices[2]);
+    assert.equal(chooseWeightedCase([], failedHistory, strategy), null);
+    const measured = [...failedHistory, { caseId: 'b', seconds: 5 }];
+    assert.deepEqual(rankedCases(choices, measured, strategy, 3), [choices[1]], 'only measured members can be ranked');
+  }
+});
+
+test('rank count bounds use a safe default while large valid counts include every measured selected case', () => {
+  const choices = Array.from({ length: 7 }, (_, i) => ({ id: `case-${i}` }));
+  const history = choices.map((item, i) => ({ caseId: item.id, seconds: i + 1 }));
+  assert.equal(DEFAULT_RANK_COUNT, 5);
+  for (const value of [0, -1, 1.5, '2', null, NaN, Infinity, MAX_RANK_COUNT + 1]) {
+    assert.deepEqual(rankedCases(choices, history, 'fastest', value), choices.slice(0, DEFAULT_RANK_COUNT));
+  }
+  assert.deepEqual(rankedCases(choices, history, 'fastest', MAX_RANK_COUNT), choices);
+});
+
+test('recent Insights outcomes use dates and stable ties, including failures and assisted solves in the window', () => {
+  const records = [
+    { id: 'newer', seconds: 7, createdAt: '2026-10-20T10:00:00Z' },
+    { id: 'old', seconds: 10, createdAt: '2026-10-18T10:00:00Z' },
+    { id: 'tie-clean', seconds: 3, createdAt: '2026-10-20T10:00:00Z' },
+    { id: 'tie-failure', seconds: 100, recallFail: true, createdAt: '2026-10-20T10:00:00Z' },
+    { id: 'assisted', seconds: 1, assisted: true, createdAt: '2026-10-21T10:00:00Z' },
+    { id: 'undated', seconds: 20 },
+    null, false, [], 'invalid',
+  ];
+  const before = structuredClone(records);
+  assert.deepEqual(recentAttempts(records, 3).map(item => item.id), ['tie-clean', 'tie-failure', 'assisted']);
+  assert.equal(summarize(recentAttempts(records, 3)).median, 3);
+  assert.equal(summarize(recentAttempts(records, 3)).lapseRate, 1 / 2);
+  assert.deepEqual(recentCleanAttempts(records, 3).map(item => item.id), ['old', 'newer', 'tie-clean']);
+  assert.deepEqual(recentAttempts([{ id: 'first' }, { id: 'last' }], 1).map(item => item.id), ['last']);
+  assert.deepEqual(records, before);
+});
+
+test('Insights applies a separate recent window to each case and exact algorithm before grouping', () => {
+  const record = (id, caseId, algorithmId, algorithm) => ({ id, caseId, algorithmId, algorithm, seconds: 3 });
+  const records = [
+    record('old-a', 'a', 'preferred', 'R U'), record('old-b', 'b', 'preferred', 'R U'),
+    record('old-alt', 'a', 'alternative', 'R U2'), record('old-revised', 'a', 'preferred', 'R U2'),
+    record('new-a', 'a', 'preferred', 'R U'), record('new-b', 'b', 'preferred', 'R U'),
+    record('new-alt', 'a', 'alternative', 'R U2'), record('new-revised', 'a', 'preferred', 'R U2'),
+  ];
+  const before = structuredClone(records);
+  const selected = recentAlgorithmAttempts(records, 1);
+  assert.deepEqual(selected.map(item => item.id), ['new-a', 'new-b', 'new-alt', 'new-revised']);
+  assert.equal(selected[0], records[4]);
+  assert.equal(selected.length, 4, 'a per-algorithm window is not a global recent-result limit');
+  assert.deepEqual(records, before);
+});
+
+test('Insights recent windows follow the supplied filters and validate helper bounds', () => {
+  const records = Array.from({ length: 30 }, (_, i) => ({
+    id: `outcome-${i}`, caseId: 'a', algorithmId: 'preferred', algorithm: 'R U',
+    seconds: i + 1, color: i >= 25 ? 'yellow' : 'white',
+  }));
+  assert.deepEqual(recentAlgorithmAttempts(filterAttempts(records, { color: 'white' }), 2).map(item => item.id), ['outcome-23', 'outcome-24']);
+  assert.equal(DEFAULT_INSIGHTS_WINDOW, 20);
+  for (const value of [0, -1, 1.5, '2', null, NaN, Infinity, MAX_INSIGHTS_WINDOW + 1]) {
+    assert.deepEqual(recentAttempts(records, value), records.slice(-DEFAULT_INSIGHTS_WINDOW));
+    assert.deepEqual(recentAlgorithmAttempts(records, value), records.slice(-DEFAULT_INSIGHTS_WINDOW));
+  }
+  assert.deepEqual(recentAlgorithmAttempts([], 1), []);
+  assert.deepEqual(recentAlgorithmAttempts(records, MAX_INSIGHTS_WINDOW), records);
 });
 
 test('one-look inspection uses strict thresholds and counts a measured zero', () => {

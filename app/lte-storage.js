@@ -1,5 +1,5 @@
 import { CASES5 } from './catalog5.js';
-import { DEFAULT_SPEED_WINDOW, MAX_SPEED_WINDOW } from './stats.js';
+import { DEFAULT_SPEED_WINDOW, MAX_SPEED_WINDOW, DEFAULT_RANK_COUNT, MAX_RANK_COUNT, DEFAULT_INSIGHTS_WINDOW, MAX_INSIGHTS_WINDOW } from './stats.js';
 import { CASES_CENTRES } from './catalog-centres.js';
 
 const edges = { cases: CASES5, casesById: new Map(CASES5.map(item => [item.id, item])), label: '5×5' };
@@ -7,7 +7,7 @@ const centres = { cases: CASES_CENTRES, casesById: new Map(CASES_CENTRES.map(ite
 const orientations = ['', 'y', 'y2', "y'"];
 const timingModes = ['simple', 'inspection'];
 const scrambleStyles = ['provided', 'varied'];
-const strategies = ['uniform', 'learning', 'slow', 'inconsistent', 'new'];
+const strategies = ['uniform', 'learning', 'slow', 'slowest', 'fastest', 'inconsistent', 'new'];
 const own = (value, key) => Object.hasOwn(value, key);
 const fail = message => { throw new Error(message); };
 
@@ -15,7 +15,7 @@ function freshTrainingData(catalog) {
   return {
     settings: {
       selectedCases: catalog.cases.map(item => item.id), orientations: [''],
-      strategy: 'uniform', slowWindow: DEFAULT_SPEED_WINDOW, scrambleStyle: 'provided', record: true, showPreview: true,
+      strategy: 'uniform', slowWindow: DEFAULT_SPEED_WINDOW, rankCount: DEFAULT_RANK_COUNT, insightsWindow: DEFAULT_INSIGHTS_WINDOW, scrambleStyle: 'provided', record: true, showPreview: true,
       timingMode: 'simple', inspectionAudio: false,
     },
     preferences: {}, attempts: [], presets: [],
@@ -53,13 +53,19 @@ function speedWindow(value, label) {
   if (!Number.isInteger(value) || value < 1 || value > MAX_SPEED_WINDOW) fail(`Invalid ${label}: expected a whole number from 1 to ${MAX_SPEED_WINDOW}.`);
   return value;
 }
+function boundedCount(value, maximum, label) {
+  if (!Number.isInteger(value) || value < 1 || value > maximum) fail(`Invalid ${label}: expected a whole number from 1 to ${maximum}.`);
+  return value;
+}
 function settings(value, label, catalog) {
-  object(value, label, ['selectedCases', 'orientations', 'strategy', 'slowWindow', 'scrambleStyle', 'record', 'showPreview', 'timingMode', 'inspectionAudio']);
+  object(value, label, ['selectedCases', 'orientations', 'strategy', 'slowWindow', 'rankCount', 'insightsWindow', 'scrambleStyle', 'record', 'showPreview', 'timingMode', 'inspectionAudio']);
   return {
     selectedCases: selection(value.selectedCases, [...catalog.casesById.keys()], `${label} cases`),
     orientations: selection(value.orientations, orientations, `${label} orientations`, 1),
     strategy: choice(value.strategy, strategies, `${label} strategy`),
     slowWindow: own(value, 'slowWindow') ? speedWindow(value.slowWindow, `${label} recent clean solves`) : DEFAULT_SPEED_WINDOW,
+    rankCount: own(value, 'rankCount') ? boundedCount(value.rankCount, MAX_RANK_COUNT, `${label} ranked algorithms`) : DEFAULT_RANK_COUNT,
+    insightsWindow: own(value, 'insightsWindow') ? boundedCount(value.insightsWindow, MAX_INSIGHTS_WINDOW, `${label} Insights recent solves`) : DEFAULT_INSIGHTS_WINDOW,
     scrambleStyle: own(value, 'scrambleStyle') ? choice(value.scrambleStyle, scrambleStyles, `${label} scramble style`) : 'provided',
     record: boolean(value.record, `${label} record`),
     showPreview: boolean(value.showPreview, `${label} preview`),

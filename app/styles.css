@@ -32,6 +32,10 @@
 
 .inspection-stats{margin:24px 0}
 .inspection-stats h2{font-size:14px}
+.summary-window{display:flex;align-items:flex-end;gap:20px;padding:16px 23px;border-bottom:1px solid #edf0e8;background:#fcfdf9}
+.summary-window>.field{flex:0 1 230px;min-width:150px}
+.summary-window>.help{flex:1;margin:0;font-size:11px;line-height:1.65}
+@media(max-width:600px){.summary-window{display:block;padding:16px}.summary-window>.field{width:100%;min-width:0}.summary-window>.help{margin-top:10px;font-size:12px}}
 .inspection-stats .metric-grid{margin:12px 0 8px}
 .inspection-stats .help{margin-top:0}
 @media(max-width:600px){.inspection-stats .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

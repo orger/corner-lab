@@ -61,7 +61,7 @@ async function controller(settings = {}, random = () => 0.25, stored = {}) {
       dispose() { audioCalls.push({ method: 'dispose', time }); },
     }),
     download(...args) { downloads.push(args); }, structuredClone,
-    chooseWeightedCase: (cases, attempts, strategy, suppliedRandom, slowWindow) => stats.chooseWeightedCase(cases, attempts, strategy, suppliedRandom || random, slowWindow),
+    chooseWeightedCase: (cases, attempts, strategy, suppliedRandom, slowWindow, rankCount) => stats.chooseWeightedCase(cases, attempts, strategy, suppliedRandom || random, slowWindow, rankCount),
     document, window, navigator: {},
     CustomEvent: class CustomEvent {
       constructor(type, { detail } = {}) { this.type = type; this.detail = detail; }
@@ -75,7 +75,7 @@ async function controller(settings = {}, random = () => 0.25, stored = {}) {
   });
   const api = await vm.runInContext(`(async () => { ${appSource}
     return {
-      nextDrill, scopeAttempts, selectedCases, preferred, showCase, filteredInsights, insightsPage, switchTrainer,
+      nextDrill, scopeAttempts, selectedCases, preferred, showCase, filteredInsights, insightsPage, insightTable, switchTrainer,
       lteSnapshot: () => lte.snapshot(),
       ltcSnapshot: () => ltc.snapshot(),
       progressSnapshot: () => progress.snapshot(),
@@ -206,7 +206,7 @@ test('one-look samples every initial U position and retains it through reveal, h
 test('one-look focus preserves old insertion history without treating it as the replacement', async () => {
   const ui = await controller({ mode: 'one-look', finishIds: ['FF-LS-Uplus3'], timingMode: 'simple' });
   const current = ui.snapshot().current;
-  const base = { ...current, caseId: current.case.id, algorithmId: current.algorithm.id, timingMode: 'simple', seconds: 3 };
+  const base = { ...current, caseId: current.case.id, algorithmId: current.algorithm.id, algorithm: current.algorithm.alg, timingMode: 'simple', seconds: 3 };
   ui.setAttempts([{ ...base, id: 'new' }, { ...base, id: 'old', finish: "R' U' R" }]);
   assert.deepEqual(Array.from(ui.scopeAttempts(), a => a.id), ['new']);
   assert.equal(ui.snapshot().data.attempts.length, 2);
@@ -472,6 +472,199 @@ test('2×2 Speed window is validated, saved with practices and independent of ot
   assert.match(ui.nodes.get('#app').innerHTML, /id="speed-window"[^>]*disabled/);
   await ui.change('speed-window', { value: '2' });
   assert.equal(ui.snapshot().data.settings.slowWindow, 7, 'active timer blocks edits');
+});
+
+function rankedHistory(caseId, id, seconds, overrides = {}) {
+  const item = CASES.find(item => item.id === caseId);
+  return {
+    id, caseId, set: item.set, group: item.group,
+    algorithmId: item.algorithms[0].id, algorithm: item.algorithms[0].alg,
+    seconds, createdAt: '2026-10-01T12:00:00Z',
+    mode: 'last-layer', timingMode: 'simple', color: 'white', preAuf: '', postAuf: '', orientation: '',
+    ...overrides,
+  };
+}
+function summaryRows(html) {
+  return [...html.matchAll(/<tr>([\s\S]*?)<\/tr>/g)]
+    .map(([, row]) => [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map(([, cell]) => cell.replace(/<[^>]*>/g, '').trim()))
+    .filter(cells => cells.length);
+}
+
+test('2×2 ranked modes draw strictly and equally from the configured selected pool', async () => {
+  const ids = ['CLL-S1', 'CLL-S2', 'CLL-S3', 'CLL-S4', 'CLL-S5'];
+  const history = ids.slice(0, 4).map((id, index) => rankedHistory(id, `rank-${index}`, [2, 4, 8, 12][index]));
+  history.push(rankedHistory('EG1-S1', 'unselected', 500));
+  let draw = 0;
+  const ui = await controller({ selectedCases: ids, strategy: 'slowest', rankCount: 2 }, () => draw, { attempts: history });
+  for (const [strategy, expected] of [['slowest', ['CLL-S4', 'CLL-S3']], ['fastest', ['CLL-S1', 'CLL-S2']]]) {
+    await ui.change('focus-select', { value: strategy });
+    const actual = [];
+    for (const value of [0, .49, .5, .99]) {
+      draw = value; ui.nextDrill(); actual.push(ui.snapshot().current.case.id);
+    }
+    assert.deepEqual(actual, [expected[0], expected[0], expected[1], expected[1]], strategy);
+    await ui.change('rank-count', { value: '1' });
+    draw = .99; ui.nextDrill();
+    assert.equal(ui.snapshot().current.case.id, expected[0]);
+    await ui.change('rank-count', { value: '2' });
+  }
+  await ui.change('rank-count', { value: '129' });
+  for (const value of [0, .25, .5, .99]) {
+    draw = value; ui.nextDrill();
+    assert.ok(ids.slice(0, 4).includes(ui.snapshot().current.case.id), 'unmeasured and unselected cases stay outside a measured pool');
+  }
+  assert.deepEqual(ui.snapshot().data.settings.selectedCases, ids);
+  assert.deepEqual(ui.snapshot().data.attempts, history, 'ranking never trims or edits recorded history');
+});
+
+test('2×2 ranked modes respond to recent improvement and only use the current algorithm and conditions', async () => {
+  const ids = ['CLL-S1', 'CLL-S2'];
+  const history = ids.flatMap(caseId => Array.from({ length: 20 }, (_, index) => rankedHistory(
+    caseId, `${caseId}-${index}`, caseId === ids[0] ? index < 15 ? 20 : 2 : 6,
+    { createdAt: new Date(Date.UTC(2026, 9, 1, 0, index)).toISOString() },
+  )));
+  history.push(
+    ...['recallFail', 'dnf', 'assisted'].map(flag => ({ ...history[19], id: flag, [flag]: true, seconds: 300, createdAt: '2026-10-18T12:00:00Z' })),
+    { ...history[19], id: 'other-color', color: 'yellow', seconds: 300, createdAt: '2026-10-18T12:01:00Z' },
+    { ...history[19], id: 'other-grip', orientation: 'y', seconds: 300, createdAt: '2026-10-18T12:02:00Z' },
+    { ...history[19], id: 'old-algorithm', algorithmId: 'previous-algorithm', seconds: 300, createdAt: '2026-10-18T12:03:00Z' },
+    { ...history[19], id: 'revised-text', algorithm: history[19].algorithm + ' U4', seconds: 300, createdAt: '2026-10-18T12:04:00Z' },
+  );
+  const ui = await controller({ selectedCases: ids, strategy: 'slowest', rankCount: 1, slowWindow: 5 }, () => .99, { attempts: history.slice().reverse() });
+  assert.equal(ui.snapshot().current.case.id, ids[1]);
+  assert.ok(!Array.from(ui.scopeAttempts(), a => a.id).some(id => ['other-color', 'other-grip', 'old-algorithm', 'revised-text'].includes(id)));
+  await ui.change('focus-select', { value: 'fastest' }); ui.nextDrill();
+  assert.equal(ui.snapshot().current.case.id, ids[0]);
+  await ui.change('speed-window', { value: '20' }); ui.nextDrill();
+  assert.equal(ui.snapshot().current.case.id, ids[1], 'longer history changes which case is fastest');
+  await ui.change('focus-select', { value: 'slowest' }); ui.nextDrill();
+  assert.equal(ui.snapshot().current.case.id, ids[0]);
+  const item = CASES.find(item => item.id === ids[0]), alternative = item.algorithms[1];
+  ui.showCase(item.id); await ui.click('choose-alg', { id: alternative.id }); await ui.click('close-modal');
+  ui.nextDrill();
+  assert.equal(ui.snapshot().current.case.id, ids[1], 'times for a former preferred algorithm cannot rank its replacement');
+  assert.deepEqual(ui.snapshot().data.attempts, history.slice().reverse());
+});
+
+test('ranked modes can begin without clean history and retain every selected case for the baseline', async () => {
+  const ids = ['CLL-S1', 'CLL-S2', 'CLL-S3'];
+  let draw = 0;
+  const history = ids.map((id, i) => rankedHistory(id, `assisted-${i}`, 2 + i, { assisted: true }));
+  const ui = await controller({ selectedCases: ids, strategy: 'slowest', rankCount: 1 }, () => draw, { attempts: history });
+  for (const strategy of ['slowest', 'fastest']) {
+    await ui.change('focus-select', { value: strategy });
+    const seen = [];
+    for (const value of [0, .5, .99]) { draw = value; ui.nextDrill(); seen.push(ui.snapshot().current.case.id); }
+    assert.deepEqual(seen, ids);
+  }
+  assert.match(ui.nodes.get('#app').innerHTML, /with no times yet, all selected cases are mixed/);
+  assert.deepEqual(ui.snapshot().data.settings.selectedCases, ids);
+});
+
+test('rank counts and Insights windows validate edits, stay independent, and return with saved practices', async () => {
+  const ui = await controller();
+  assert.doesNotMatch(ui.nodes.get('#app').innerHTML, /id="rank-count"/);
+  assert.equal(ui.snapshot().data.settings.insightsWindow, 20);
+  await ui.change('focus-select', { value: 'fastest' });
+  for (const value of ['1', '129', '4']) await ui.change('rank-count', { value });
+  await ui.change('speed-window', { value: '7' });
+  await ui.change('insights-window', { value: '17' });
+  for (const [id, maximum, field, expected] of [['rank-count', 129, 'rankCount', 4], ['insights-window', 1000, 'insightsWindow', 17]]) {
+    for (const value of ['', '0', '-1', '2.5', String(maximum + 1), 'not-a-number']) {
+      await ui.change(id, { value });
+      assert.equal(ui.snapshot().data.settings[field], expected);
+      assert.match(ui.nodes.get('#toast').textContent, /whole number/);
+    }
+  }
+  assert.match(ui.nodes.get('#app').innerHTML, /id="rank-count"[^>]*value="4"/);
+  await ui.click('nav', { page: 'insights' });
+  assert.match(ui.nodes.get('#app').innerHTML, /id="insights-window"[^>]*value="17"/);
+  for (const branch of [ui.snapshot().data.lte, ui.snapshot().data.ltc]) {
+    assert.equal(branch.settings.rankCount, 5);
+    assert.equal(branch.settings.insightsWindow, 20);
+  }
+  ui.nodes.set('#preset-name', { value: 'Lucky-case PRs' }); await ui.click('save-preset');
+  const preset = ui.snapshot().data.presets[0];
+  await ui.change('focus-select', { value: 'slowest' });
+  await ui.change('rank-count', { value: '8' }); await ui.change('speed-window', { value: '40' });
+  await ui.change('insights-window', { value: '30' });
+  await ui.click('load-preset', { id: preset.id });
+  const { settings } = ui.snapshot().data;
+  assert.equal(settings.strategy, 'fastest'); assert.equal(settings.rankCount, 4);
+  assert.equal(settings.slowWindow, 7); assert.equal(settings.insightsWindow, 17);
+  assert.doesNotThrow(() => validateData(structuredClone(ui.snapshot().data)));
+  await ui.click('timer');
+  assert.match(ui.nodes.get('#app').innerHTML, /id="rank-count"[^>]*disabled/);
+  for (const [id, value] of [['rank-count', '2'], ['insights-window', '5'], ['speed-window', '2']]) await ui.change(id, { value });
+  assert.equal(settings.rankCount, 4); assert.equal(settings.insightsWindow, 17); assert.equal(settings.slowWindow, 7);
+});
+
+test('Insights recent summaries use chronological per-algorithm windows while exports and resets keep the full filter scope', async () => {
+  const make = (caseId, id, seconds, day, extra = {}) => rankedHistory(caseId, id, seconds, { createdAt: `2026-10-${String(day).padStart(2, '0')}T12:00:00Z`, ...extra });
+  const history = [
+    make('CLL-S1', 's1-latest-lapse', 8, 3, { recallFail: true }), make('CLL-S2', 's2-old', 60, 1),
+    make('CLL-S1', 's1-old', 50, 1), make('CLL-S2', 's2-latest', 10, 3),
+    make('CLL-S1', 's1-recent', 4, 2), make('CLL-S2', 's2-recent', 6, 2),
+    make('EG1-S1', 'other-set', 99, 4),
+  ];
+  const ui = await controller({ insightsWindow: 2 }, () => .25, { attempts: history });
+  for (const [branch, item] of [['lte', CASES5[0]], ['ltc', CASES_CENTRES[0]]]) {
+    ui.snapshot().data[branch].attempts = [{
+      id: `${branch}-keep`, caseId: item.id, set: item.set, group: item.group,
+      algorithmId: item.algorithms[0].id, algorithm: item.algorithms[0].alg,
+      seconds: 9, inspectionSeconds: null, timingMode: 'simple', inspectionAudio: false,
+      orientation: '', scrambleStyle: 'provided', recallFail: false, dnf: false, assisted: false,
+      createdAt: '2026-10-04T12:00:00Z', sessionId: 'other-trainer-session', scramble: 'R', solution: "R'",
+    }];
+  }
+  const otherTrainers = structuredClone([ui.snapshot().data.lte, ui.snapshot().data.ltc]);
+  ui.setInsightFilters({ set: 'CLL' }); await ui.click('nav', { page: 'insights' });
+  const rows = summaryRows(ui.insightTable(ui.filteredInsights()));
+  const s1 = rows.find(cells => cells[0] === 'CLL / S1'), s2 = rows.find(cells => cells[0] === 'CLL / S2');
+  assert.deepEqual(s1.slice(1, 4), ['2', '4.00s', '4.00s'], 'the latest flagged result consumes a window slot but is not a clean time');
+  assert.match(s1[6], /50%.*\(1\)/);
+  assert.deepEqual(s2.slice(1, 4), ['2', '8.00s', '8.00s']);
+  await ui.change('insight-group', { value: 'set' });
+  assert.equal(summaryRows(ui.insightTable(ui.filteredInsights()))[0][1], '4', 'each case contributes its own window before grouping');
+  await ui.change('insights-window', { value: '3' }); await ui.change('insight-group', { value: 'caseId' });
+  assert.deepEqual(summaryRows(ui.insightTable(ui.filteredInsights())).find(cells => cells[0] === 'CLL / S1').slice(1, 4), ['3', '27.00s', '27.00s']);
+  assert.equal(ui.filteredInsights().length, 6);
+  assert.match(ui.insightsPage(), /6 results match these filters/);
+  for (const attempt of history.slice(0, 6)) assert.ok(ui.insightsPage().includes(`data-id="${attempt.id}"`), 'individual history includes results beyond the table window');
+  await ui.click('export-csv');
+  const csv = ui.downloads.at(-1)[1];
+  assert.equal(csv.trim().split('\n').length, 7);
+  for (const attempt of history.slice(0, 6)) assert.ok(csv.includes(`"${attempt.id}"`));
+  assert.ok(!csv.includes('"other-set"'));
+  assert.deepEqual(ui.snapshot().data.attempts, history);
+  await ui.click('reset-filtered');
+  assert.match(ui.nodes.get('#modal-root').innerHTML, /<strong>6 results<\/strong>/);
+  assert.deepEqual(ui.snapshot().data.attempts, history, 'the reset preview cannot delete history');
+  await ui.click('confirm-reset');
+  assert.deepEqual(Array.from(ui.snapshot().data.attempts, a => a.id), ['other-set']);
+  assert.deepEqual([ui.snapshot().data.lte, ui.snapshot().data.ltc], otherTrainers);
+});
+
+test('Insights windows separate historical text revisions that share an algorithm ID and filter before taking recent solves', async () => {
+  const s1 = CASES.find(item => item.id === 'CLL-S1');
+  const history = [
+    rankedHistory('CLL-S1', 'current-old', 2, { createdAt: '2026-10-01T12:00:00Z', color: 'green' }),
+    rankedHistory('CLL-S1', 'revision-new', 200, { createdAt: '2026-10-03T12:00:00Z', algorithm: s1.algorithms[0].alg + ' U4', color: 'green' }),
+    rankedHistory('CLL-S2', 's2-new', 8, { createdAt: '2026-10-03T12:00:00Z', color: 'green' }),
+    rankedHistory('CLL-S1', 'current-new', 4, { createdAt: '2026-10-02T12:00:00Z', color: 'green' }),
+    rankedHistory('CLL-S1', 'revision-old', 100, { createdAt: '2026-10-01T12:00:00Z', algorithm: s1.algorithms[0].alg + ' U4', color: 'green' }),
+    rankedHistory('CLL-S1', 'newest-outside-filter', 1, { createdAt: '2026-10-04T12:00:00Z', color: 'white' }),
+  ];
+  const ui = await controller({ insightsWindow: 1 }, () => .25, { attempts: history });
+  ui.setInsightFilters({ color: 'green' });
+  let rows = summaryRows(ui.insightTable(ui.filteredInsights()));
+  assert.deepEqual(rows.find(cells => cells[0] === 'CLL / S1').slice(1, 4), ['2', '102.00s', '102.00s']);
+  await ui.change('insight-group', { value: 'algorithmId' });
+  rows = summaryRows(ui.insightTable(ui.filteredInsights()));
+  assert.equal(rows.length, 3, 'two text revisions sharing an ID remain separate algorithm rows');
+  assert.ok(rows.every(cells => cells[1] === '1'));
+  assert.deepEqual(rows.map(cells => cells[2]).sort(), ['200.00s', '4.00s', '8.00s']);
+  assert.deepEqual(ui.snapshot().data.attempts, history);
 });
 
 test('invalid existing personal algorithms produce a controlled one-look startup error', async () => {

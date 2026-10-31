@@ -146,6 +146,21 @@ N; cases with fewer clean results use what is available. Each trainer and saved
 practice remembers its own N. The full-set chart window is separate. Recall
 focus continues to consider lapses and robust spread across matching history. The main guide explains the shared statistics.
 
+**Slowest N algs** and **Fastest N algs** select an equally weighted pool of up
+to N of your selected algorithms by recent clean median. Set **Number of
+algorithms (N)** (default 5), then **Recent clean solves per algorithm**
+(default 20) for the ranking window. Cases must match the preferred algorithm,
+setup style, grips, timing and cues. Cases without matching clean times are
+excluded if any measured cases exist; with no times, the selection is mixed
+until a baseline exists. Edges and centres remember their own settings.
+
+The Insights **Where to focus** table has a separate **Recent solves per
+algorithm** field (default 20, range 1–1,000). Each algorithm version receives
+its own latest-result window after filters; flagged results use window slots,
+while the clean average and median exclude failed or assisted solves. Grouped
+rows combine these algorithm windows. All history, exports, resets and chart
+windows keep their existing scope.
+
 In **Full-set progress**, the **Range start** and **Range end** sliders zoom
 both axes to your chosen period. **All time** restores the full curve. Earlier
 solves still contribute to the historical rolling averages correctly. Your
