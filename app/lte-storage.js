@@ -1,9 +1,13 @@
 import { CASES5 } from './catalog5.js';
 import { DEFAULT_SPEED_WINDOW, MAX_SPEED_WINDOW, DEFAULT_RANK_COUNT, MAX_RANK_COUNT, DEFAULT_INSIGHTS_WINDOW, MAX_INSIGHTS_WINDOW } from './stats.js';
 import { CASES_CENTRES } from './catalog-centres.js';
+import { CASES_SQ1 } from './catalog-square1.js';
+import { parseSquare1Alg } from './square1.js';
 
 const edges = { cases: CASES5, casesById: new Map(CASES5.map(item => [item.id, item])), label: '5×5' };
 const centres = { cases: CASES_CENTRES, casesById: new Map(CASES_CENTRES.map(item => [item.id, item])), label: '5×5 centres' };
+const square1 = { cases: CASES_SQ1, casesById: new Map(CASES_SQ1.map(item => [item.id, item])), label: 'Square-1', orientations: [''], parseAlgorithm: parseSquare1Alg,
+  scrambleStyles: ['provided', 'varied', 'disguised'], defaultScrambleStyle: 'disguised', layerAlignments: ['random', 'reference'] };
 const orientations = ['', 'y', 'y2', "y'"];
 const timingModes = ['simple', 'inspection'];
 const scrambleStyles = ['provided', 'varied'];
@@ -15,14 +19,16 @@ function freshTrainingData(catalog) {
   return {
     settings: {
       selectedCases: catalog.cases.map(item => item.id), orientations: [''],
-      strategy: 'uniform', slowWindow: DEFAULT_SPEED_WINDOW, rankCount: DEFAULT_RANK_COUNT, insightsWindow: DEFAULT_INSIGHTS_WINDOW, scrambleStyle: 'provided', record: true, showPreview: true,
+      strategy: 'uniform', slowWindow: DEFAULT_SPEED_WINDOW, rankCount: DEFAULT_RANK_COUNT, insightsWindow: DEFAULT_INSIGHTS_WINDOW, scrambleStyle: catalog.defaultScrambleStyle || 'provided', record: true, showPreview: true,
       timingMode: 'simple', inspectionAudio: false,
+      ...(catalog.layerAlignments ? { layerAlignment: 'random' } : {}),
     },
     preferences: {}, attempts: [], presets: [],
   };
 }
 export const freshLTEData = () => freshTrainingData(edges);
 export const freshLTCData = () => freshTrainingData(centres);
+export const freshSQ1Data = () => freshTrainingData(square1);
 
 function object(value, label, keys) {
   if (!value || typeof value !== 'object' || Array.isArray(value) ||
@@ -58,19 +64,20 @@ function boundedCount(value, maximum, label) {
   return value;
 }
 function settings(value, label, catalog) {
-  object(value, label, ['selectedCases', 'orientations', 'strategy', 'slowWindow', 'rankCount', 'insightsWindow', 'scrambleStyle', 'record', 'showPreview', 'timingMode', 'inspectionAudio']);
+  object(value, label, ['selectedCases', 'orientations', 'strategy', 'slowWindow', 'rankCount', 'insightsWindow', 'scrambleStyle', 'record', 'showPreview', 'timingMode', 'inspectionAudio', ...(catalog.layerAlignments ? ['layerAlignment'] : [])]);
   return {
     selectedCases: selection(value.selectedCases, [...catalog.casesById.keys()], `${label} cases`),
-    orientations: selection(value.orientations, orientations, `${label} orientations`, 1),
+    orientations: selection(value.orientations, catalog.orientations || orientations, `${label} orientations`, 1),
     strategy: choice(value.strategy, strategies, `${label} strategy`),
     slowWindow: own(value, 'slowWindow') ? speedWindow(value.slowWindow, `${label} recent clean solves`) : DEFAULT_SPEED_WINDOW,
     rankCount: own(value, 'rankCount') ? boundedCount(value.rankCount, MAX_RANK_COUNT, `${label} ranked algorithms`) : DEFAULT_RANK_COUNT,
     insightsWindow: own(value, 'insightsWindow') ? boundedCount(value.insightsWindow, MAX_INSIGHTS_WINDOW, `${label} Insights recent solves`) : DEFAULT_INSIGHTS_WINDOW,
-    scrambleStyle: own(value, 'scrambleStyle') ? choice(value.scrambleStyle, scrambleStyles, `${label} scramble style`) : 'provided',
+    scrambleStyle: own(value, 'scrambleStyle') ? choice(value.scrambleStyle, catalog.scrambleStyles || scrambleStyles, `${label} scramble style`) : catalog.defaultScrambleStyle || 'provided',
     record: boolean(value.record, `${label} record`),
     showPreview: boolean(value.showPreview, `${label} preview`),
     timingMode: choice(value.timingMode, timingModes, `${label} timing mode`),
     inspectionAudio: boolean(value.inspectionAudio, `${label} inspection audio`),
+    ...(catalog.layerAlignments ? { layerAlignment: own(value, 'layerAlignment') ? choice(value.layerAlignment, catalog.layerAlignments, `${label} layer alignment`) : 'random' } : {}),
   };
 }
 function selectedAlgorithm(caseId, algorithmId, label, catalog) {
@@ -95,6 +102,7 @@ function attempt(value, knownIds, catalog) {
     'id', 'caseId', 'group', 'set', 'algorithmId', 'algorithm', 'orientation', 'scrambleStyle',
     'timingMode', 'inspectionAudio', 'seconds', 'inspectionSeconds',
     'recallFail', 'dnf', 'assisted', 'createdAt', 'sessionId', 'scramble', 'solution',
+    ...(catalog.layerAlignments ? ['layerAlignment', 'initialTop', 'initialBottom'] : []),
   ]);
   const id = string(value.id, `${label} solve ID`);
   if (knownIds.has(id)) fail(`Duplicate ${label} solve ID: ${id}.`);
@@ -109,8 +117,8 @@ function attempt(value, knownIds, catalog) {
     algorithmId: selectedAlgorithm(caseId, value.algorithmId, `${label} solve`, catalog),
     // Keep the algorithm used at solve time, even if a later catalog changes it.
     algorithm: string(value.algorithm, `${label} solve algorithm`, { max: 200000 }),
-    orientation: choice(value.orientation, orientations, `${label} solve orientation`),
-    scrambleStyle: own(value, 'scrambleStyle') ? choice(value.scrambleStyle, scrambleStyles, `${label} solve scramble style`) : 'provided',
+    orientation: choice(value.orientation, catalog.orientations || orientations, `${label} solve orientation`),
+    scrambleStyle: own(value, 'scrambleStyle') ? choice(value.scrambleStyle, catalog.scrambleStyles || scrambleStyles, `${label} solve scramble style`) : 'provided',
     timingMode: choice(value.timingMode, timingModes, `${label} solve timing mode`),
     inspectionAudio: boolean(value.inspectionAudio, `${label} solve inspection audio`),
     seconds: time(value.seconds, `${label} solve time`),
@@ -123,10 +131,27 @@ function attempt(value, knownIds, catalog) {
     solution: string(value.solution, `${label} solve solution`, { empty: true, max: 200000 }),
   };
   if (own(value, 'set')) result.set = choice(value.set, [item.set], `${label} solve set`);
+  if (catalog.layerAlignments) {
+    // Preserve missing metadata in older results instead of inventing starting
+    // turns. The UI can interpret legacy styles without rewriting history.
+    if (own(value, 'layerAlignment')) result.layerAlignment = choice(value.layerAlignment, catalog.layerAlignments, `${label} solve layer alignment`);
+    for (const field of ['initialTop', 'initialBottom']) if (own(value, field)) {
+      if (!Number.isInteger(value[field]) || value[field] < -5 || value[field] > 6) fail(`Invalid ${label} solve ${field}: expected a whole number from -5 to 6.`);
+      result[field] = value[field];
+    }
+  }
+  if (catalog.parseAlgorithm) {
+    // Historical notation is kept verbatim; parsing checks syntax only, so a
+    // future catalogue update cannot rewrite an already recorded algorithm.
+    for (const field of ['algorithm', 'scramble', 'solution']) {
+      try { catalog.parseAlgorithm(result[field]); }
+      catch { fail(`Invalid ${label} solve ${field} notation.`); }
+    }
+  }
   return result;
 }
 
-/** Each 5×5 trainer validates against its own catalog and returns detached data.
+/** Each trainer validates against its own catalog and returns detached data.
  * Selections, preferences and history remain independent in a shared backup. */
 function validateTrainingData(value, catalog) {
   const label = catalog.label;
@@ -149,3 +174,4 @@ function validateTrainingData(value, catalog) {
 }
 export const validateLTEData = value => validateTrainingData(value, edges);
 export const validateLTCData = value => validateTrainingData(value, centres);
+export const validateSQ1Data = value => validateTrainingData(value, square1);

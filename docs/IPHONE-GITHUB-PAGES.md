@@ -52,7 +52,7 @@ If you prefer branch-based Pages publishing, copy the **contents** of `dist/web`
 
 1. Open the published [cubing.orger.org](https://cubing.orger.org) address in Safari while online.
 2. Open Safari's **Share** menu, choose **Add to Home Screen**, and enable **Open as Web App** if offered. Add Corner Lab. [Apple's installation guide](https://support.apple.com/guide/iphone/open-as-web-app-iphea86e5236/ios) shows the current controls.
-3. Launch Corner Lab from its new icon while still online and wait for **Ready offline**. This saves the app and all three trainers on the phone. Without a connection, the status reads **Offline · ready to practise**.
+3. Launch Corner Lab from its new icon while still online and wait for **Ready offline**. This saves the app and all four trainers on the phone. Without a connection, the status reads **Offline · ready to practise**.
 4. Try opening it with the connection disabled before relying on it away from home. The first load and downloading future versions require internet access.
 
 Tap the large timer or use the on-screen buttons for inspection and solving. **Cancel** stops timing without recording a result. Switching away from the app or locking the phone also cancels an unfinished attempt; it does not resume automatically. The app asks the browser to keep the screen awake during timing where supported.

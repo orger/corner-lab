@@ -1,15 +1,15 @@
 /* Only public, bundled app files are cached. Training history stays in storage.js. */
 const CACHE_PREFIX = 'corner-lab-static-';
 // Direct app/ previews keep this source version. build-web assigns a content hash.
-const CACHE_VERSION = 'source-v1';
+const CACHE_VERSION = 'source-v1.7.1';
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 // The web build replaces this list with every published app asset.
 const PRECACHE = [
-  './', './index.html', './styles.css', './progress.css', './app.js', './pwa.js',
+  './', './index.html', './styles.css', './progress.css', './square1.css', './app.js', './pwa.js',
   './cube.js', './cube5.js', './cubeview.js', './cubeview5.js', './centres-view.js',
   './catalog.js', './catalog5.js', './catalog-centres.js', './first-face-cases.js',
   './storage.js', './lte-storage.js', './stats.js', './progress.js', './lte.js',
-  './centres-drill.js', './inspection-audio.js', './manifest.webmanifest',
+  './centres-drill.js', './square1.js', './catalog-square1.js', './square1-view.js', './inspection-audio.js', './manifest.webmanifest',
   './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'
 ];
 const assetURLs = PRECACHE.map(path => new URL(path, self.registration.scope).href);

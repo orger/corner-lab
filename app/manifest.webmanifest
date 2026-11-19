@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Corner Lab",
   "short_name": "Corner Lab",
-  "description": "Offline 2×2 and 5×5 cube practice",
+  "description": "Offline 2×2, 5×5 and Square-1 cube practice",
   "lang": "en",
   "start_url": "./",
   "scope": "./",

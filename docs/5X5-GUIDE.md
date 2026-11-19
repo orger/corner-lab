@@ -130,7 +130,7 @@ Centre, edge, and 2×2 results and saved practices are kept separately. Insights
 can filter by case, pattern, direction/axis choice, setup style, grip, timing,
 inspection cues, session, and date. Use **Reset matching results** to remove only
 the filtered history for the current trainer; algorithm preferences and the
-other trainers' results are kept. Full backups include all three trainers,
+other trainers' results are kept. Full backups include all four trainers,
 while a 5×5 CSV export contains only the filtered results from its current
 centre or edge trainer. Choose **Learning** under Practice focus to see each selected case once per
 shuffled batch, followed by another shuffled batch. The practice card shows

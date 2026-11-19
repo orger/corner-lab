@@ -85,7 +85,7 @@ test('worker serves all trainers offline and does not intercept backups, externa
   const worker = workerHarness();
   await worker.emit('install');
   assert.equal(worker.skipped, false, 'installing never forces an update');
-  for (const name of ['index.html', 'catalog.js', 'catalog5.js', 'catalog-centres.js', 'centres-drill.js', 'lte.js', 'progress.js']) {
+  for (const name of ['index.html', 'catalog.js', 'catalog5.js', 'catalog-centres.js', 'centres-drill.js', 'lte.js', 'progress.js', 'square1.js', 'catalog-square1.js', 'square1-view.js']) {
     const response = await worker.emit('fetch', { request: { method: 'GET', url: `https://example.test/corner/${name}` } });
     assert.equal(await response.text(), `saved:https://example.test/corner/${name}`);
   }

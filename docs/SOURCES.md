@@ -229,3 +229,33 @@ The build writes `app/catalog.js` and `scripts/catalog-report.json`. The report
 includes all source-to-case mappings, corrections, counts, and any excluded
 choices. No network access is needed to rebuild or run the tests. User-entered
 algorithms are stored separately and are never overwritten by catalog rebuilds.
+
+
+## Square-1 cube shape
+
+The shape model follows the 30-degree edge / 60-degree corner geometry and
+standard `(top,bottom) /` notation described on [Jaap Scherphuis's Square-1
+page](https://www.jaapsch.net/puzzles/square1.htm). That reference counts 170
+ordered top/bottom shape combinations, before considering layer rotations.
+Corner Lab includes the 169 non-cube pairs and retains mirrored layers and
+swapped top/bottom cases as separate choices. Middle-layer orientation, colours
+and piece permutation are outside this shape-only catalogue.
+
+Corner Lab generates its own solutions using a breadth-first search of the
+legal shape graph. The catalogue and SVG diagrams are produced from the model;
+no diagram images or bulk algorithm lists are copied from another trainer.
+Names follow familiar layer-shape terminology where a reliable mapping is
+available. Case identifiers encode the layer signatures so case histories do
+not depend on display names or catalogue order. The tests enumerate coverage,
+check legal slices, known notation examples, inverse setups, and the solution
+for every case under varied layer alignments.
+
+
+Disguised Square-1 setups use a varied legal route through the shape graph,
+rather than displaying the inverse of the selected solving algorithm. The
+result matches the same ordered layer outlines; piece permutation and middle
+orientation may differ. A final independent top/bottom turn chooses among all
+12 angular positions per layer. The simulator checks that aligning the actual
+setup and applying the selected algorithm restores cube shape. Tests also
+check that blocked-slice orientations are represented without attempting an
+illegal slice in the setup.

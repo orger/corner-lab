@@ -5,6 +5,9 @@ import vm from 'node:vm';
 import { CASES } from '../app/catalog.js';
 import { CASES5 } from '../app/catalog5.js';
 import { CASES_CENTRES } from '../app/catalog-centres.js';
+import { CASES_SQ1 } from '../app/catalog-square1.js';
+import { createSquare1Drill, solvedSquare1, applySquare1Alg, inverseSquare1, isCubeShape } from '../app/square1.js';
+import { square1SVG } from '../app/square1-view.js';
 import { centreSVG5 } from '../app/centres-view.js';
 import { createCentresDrill } from '../app/centres-drill.js';
 import { createProgressView } from '../app/progress.js';
@@ -53,6 +56,7 @@ async function controller(settings = {}, random = () => 0.25, stored = {}) {
   const context = vm.createContext({
     ...cube, ...cubeview, ...stats, ...firstFace, createLTETrainer, CASES, freshData, validateData,
     CASES_CENTRES, centreSVG5, createCentresDrill, createProgressView,
+    CASES_SQ1, createSquare1Drill, solvedSquare1, applySquare1Alg, inverseSquare1, square1SVG,
     loadData: async () => initial,
     saveData: async data => { saves.push(structuredClone(data)); },
     createInspectionAudio: () => ({
@@ -78,6 +82,7 @@ async function controller(settings = {}, random = () => 0.25, stored = {}) {
       nextDrill, scopeAttempts, selectedCases, preferred, showCase, filteredInsights, insightsPage, insightTable, switchTrainer,
       lteSnapshot: () => lte.snapshot(),
       ltcSnapshot: () => ltc.snapshot(),
+      sq1Snapshot: () => sq1.snapshot(),
       progressSnapshot: () => progress.snapshot(),
       snapshot: () => ({ data, current, phase, lastResult }),
       setSettings: patch => { Object.assign(data.settings, patch); },
@@ -1201,4 +1206,53 @@ test('full-set progress controls work in every trainer without modifying practic
     assert.deepEqual(data, before);
     assert.equal(ui.saves.length, saves);
   }
+});
+
+
+test('Square-1 routes all pages and timer stages, preserves other trainers, reloads backups and shows set progress', async () => {
+  const ui = await controller();
+  const baseline = structuredClone(ui.snapshot().data);
+  ui.switchTrainer('square1');
+  const drill = ui.sq1Snapshot().current;
+  assert.ok(drill);
+  assert.ok(isCubeShape(applySquare1Alg(drill.state, drill.solution)));
+  assert.match(ui.nodes.get('#app').innerHTML, /Square/);
+  await ui.click('lte-timing', { mode: 'inspection' });
+  ui.setTime(1000);
+  await ui.click('lte-timer');
+  assert.equal(ui.sq1Snapshot().phase, 'inspecting');
+  assert.equal(ui.timerActive(), true);
+  ui.switchTrainer('2x2');
+  assert.equal(ui.snapshot().data.trainer, 'square1', 'switching cannot interrupt a solve');
+  ui.setTime(11200);
+  await ui.click('lte-timer');
+  ui.setTime(15450);
+  await ui.click('lte-timer');
+  const result = ui.snapshot().data.sq1.attempts[0];
+  assert.equal(result.seconds, 4.25);
+  assert.equal(result.inspectionSeconds, 10.2);
+  assert.equal(result.set, 'CS');
+  assert.equal(ui.timerActive(), false);
+  assert.deepEqual(ui.snapshot().data.attempts, baseline.attempts);
+  assert.deepEqual(ui.snapshot().data.lte, baseline.lte);
+  assert.deepEqual(ui.snapshot().data.ltc, baseline.ltc);
+  await ui.click('nav', { page: 'insights' });
+  assert.equal(ui.progressSnapshot().setId, 'square1');
+  assert.equal(ui.progressSnapshot().result.eligibleCount, 1);
+  assert.equal(ui.progressSnapshot().result.value, 4.25);
+  await ui.click('nav', { page: 'library' });
+  assert.match(ui.nodes.get('#app').innerHTML, /Cube shape|cube.shape/);
+  await ui.click('nav', { page: 'settings' });
+  assert.match(ui.nodes.get('#app').innerHTML, /Square/);
+  const restored = validateData(JSON.parse(JSON.stringify(ui.snapshot().data)));
+  const reloaded = await controller({}, () => 0.25, restored);
+  assert.equal(reloaded.snapshot().data.trainer, 'square1');
+  assert.deepEqual(reloaded.snapshot().data.sq1.attempts, [result]);
+  await reloaded.click('lte-timer');
+  assert.equal(reloaded.timerActive(), true);
+  reloaded.visibilityChange(true);
+  assert.equal(reloaded.timerActive(), false);
+  assert.equal(reloaded.snapshot().data.sq1.attempts.length, 1, 'hiding cancels rather than saving');
+  reloaded.switchTrainer('2x2');
+  assert.equal(reloaded.snapshot().data.trainer, '2x2');
 });

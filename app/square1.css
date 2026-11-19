@@ -1,0 +1,9 @@
+/* The two layer silhouettes need more height than the 5×5 edge strips. */
+.sq1-case-grid .lte-case-diagram{height:auto;min-height:150px}
+.sq1-case-grid .lte-case-diagram svg{max-height:none;width:100%;max-width:300px;height:auto}
+.sq1-preview>svg,.sq1-reference>svg{display:block;width:100%;max-width:460px;height:auto;margin:12px auto}
+.sq1-preview>.help,.sq1-reference>.help{max-width:none;text-align:center}
+@media(max-width:600px){
+  .sq1-case-grid .lte-case-diagram{min-height:140px}
+  .sq1-preview>svg,.sq1-reference>svg{margin:8px auto}
+}

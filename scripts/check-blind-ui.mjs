@@ -1,0 +1,133 @@
+// End-to-end checks use a disposable browser profile, never the solver's data.
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {writeFile} from 'node:fs/promises';
+import {PAIRS,SPECIALS} from '../app/blind/data.js';
+import {TEST_VAULT} from '../tests/blind-native-vault-fixture.js';
+const runtimeRequire=createRequire(`${process.env.BLIND_MEMO_RUNTIME||process.env.HOME+'/.cache/codex-runtimes/codex-primary-runtime/dependencies/node'}/package.json`);
+const {chromium}=runtimeRequire('playwright');
+const browser=await chromium.launch({headless:true,channel:'chrome'});
+const context=await browser.newContext({viewport:{width:1440,height:1024},acceptDownloads:true});
+const page=await context.newPage();
+const errors=[];
+page.on('pageerror',error=>errors.push(error.message));
+await page.route('**/default-memos.js',route=>route.fulfill({contentType:'text/javascript',body:'export const DEFAULT_MEMO_VAULT = '+JSON.stringify(TEST_VAULT)+';'}));
+const ownChoices=Object.fromEntries([...PAIRS,...SPECIALS].map(card=>[card.id,'Invented test image '+card.id]));
+await writeFile('.build/blind-test-choices.json',JSON.stringify({memos:ownChoices}));
+const base=process.env.BLIND_MEMO_TEST_URL||'http://127.0.0.1:8766/';
+const waitReady=()=>page.waitForSelector('body[data-ready="true"]');
+async function startMemoWithSeed(seed) {
+  await page.evaluate(value=>{
+    const previous=Math.random;let n=value;
+    Math.random=()=>((n=(1664525*n+1013904223)>>>0)/4294967296);
+    try{document.querySelector('[data-action="memo-start"]').click();}finally{Math.random=previous;}
+  },seed);
+  await page.waitForTimeout(150);
+}
+try{
+  await page.goto(base);await waitReady();
+  await page.screenshot({path:'.build/blind-desktop.png',fullPage:true});
+  assert.equal(await page.evaluate(()=>window.blindMemoQA().state.history.length),0);
+  assert(await page.locator('#recall-start').isDisabled());
+  await page.locator('#defaults-password').fill('wrong fixture password');await page.locator('#unlock-form button').click();
+  await page.waitForSelector('#unlock-form [role="alert"]');assert(await page.locator('#recall-start').isDisabled());
+  await page.locator('#defaults-password').fill('native-test-passphrase');await page.locator('#unlock-form button').click();
+  await page.waitForSelector('[data-action="lock-defaults"]');assert(!await page.locator('#recall-start').isDisabled());
+  assert(!await page.evaluate(()=>JSON.stringify(localStorage).includes('Native test fixture')));
+  await page.locator('[data-action="lock-defaults"]').click();assert(await page.locator('#recall-start').isDisabled());
+  await page.reload();await waitReady();assert(await page.locator('#recall-start').isDisabled());
+  await page.locator('#choices-file').setInputFiles('.build/blind-test-choices.json');
+  await page.waitForFunction(()=>Object.keys(window.blindMemoQA().state.memos).length===601);
+  await page.keyboard.press('Space');await page.waitForSelector('#recall-reveal');
+  await page.waitForTimeout(150);await page.keyboard.press('Space');await page.waitForSelector('[data-rating="good"]');
+  assert.equal(await page.locator('.letter-pair').count(),0);
+  const first=await page.evaluate(()=>window.blindMemoQA().currentCard);
+  await page.keyboard.press('3');
+  await page.waitForFunction(()=>window.blindMemoQA().state.history.length===1);
+  let snapshot=await page.evaluate(()=>window.blindMemoQA());
+  assert.equal(snapshot.state.history[0].rating,'change');assert(snapshot.state.changeQueue[first.id]);
+  assert(snapshot.state.records[first.id].weight>1);
+  assert.notEqual(snapshot.currentCard.id,first.id);
+  await page.locator('[data-page="library"]').click();
+  await page.locator('#library-search').fill(first.pair);
+  await page.locator(`[data-action="edit-memo"][data-id="${first.id}"]`).click();
+  await page.locator('#memo-edit').fill('A new test image');
+  await page.locator('[data-action="save-memo"]').click();
+  snapshot=await page.evaluate(()=>window.blindMemoQA());
+  assert.equal(snapshot.state.memos[first.id],'A new test image');assert(!snapshot.state.changeQueue[first.id]);
+  assert.equal(snapshot.state.history[0].memo,ownChoices[first.id]);
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('blind-memo-lab:v1')).memos[window.blindMemoQA().state.history[0].cardId]==='A new test image');
+  await page.reload();await waitReady();assert.equal(await page.evaluate(()=>window.blindMemoQA().state.history.length),1);
+  await page.locator('[data-setting="scope"]').selectOption('both');
+  await page.locator('[data-setting="presentation"]').selectOption('pieces');
+  await page.locator('[data-setting="includeSpecials"]').uncheck();
+  await page.locator('#recall-start').click();await page.waitForTimeout(120);
+  assert.equal(await page.locator('.piece-pair svg').count(),2);
+  assert(!await page.locator('.piece-pair').innerText());
+  await page.screenshot({path:'.build/blind-piece-recall.png',fullPage:true});
+  await page.keyboard.press('Space');await page.locator('[data-rating="good"]').click();
+  await page.locator('[data-page="memo"]').click();
+  await startMemoWithSeed(15);
+  await page.screenshot({path:'.build/blind-full-memo.png',fullPage:true});
+  assert(await page.locator('.memo-step svg').count()>0);
+  await page.keyboard.press('Space');await page.waitForSelector('#memo-answer-form');
+  const memo=await page.evaluate(()=>window.blindMemoQA().memo);
+  assert.equal(await page.locator('.memo-row,.memo-step,.memo-board svg').count(),0,'Prompt must be removed while entering the remembered sequence');
+  assert.equal(memo.edges.specials.length,1);assert.equal(memo.edges.specials[0].piece,'FR');
+  assert(await page.locator('[name="edgesSpecial"]').isVisible(),'Separate edge flip needs an answer field');
+  assert(await page.locator('[name="cornersSpecial"]').isVisible(),'Separate corner twists need an answer field');
+  await page.screenshot({path:'.build/blind-memo-hidden-answer.png',fullPage:true});
+  for(const kind of ['corners','edges']){
+    await page.locator(`[name="${kind}"]`).fill(memo[kind].letters);
+    if(memo[kind].specials.length)await page.locator(`[name="${kind}Special"]`).fill(memo[kind].specials.map(item=>item.piece+(kind==='corners'?' '+item.direction:'')).join(', '));
+  }
+  await page.locator('#memo-answer-form button').click();
+  assert((await page.locator('.memo-result').innerText()).includes('Correct sequence'));
+  assert(await page.locator('.memo-step svg').count()>0,'Prompt returns for review only after checking');
+  assert.equal(await page.evaluate(()=>window.blindMemoQA().state.memoHistory.length),1);
+  await startMemoWithSeed(1);await page.keyboard.press('Space');
+  const noFlips=await page.evaluate(()=>window.blindMemoQA().memo.edges.specials.length);
+  assert.equal(noFlips,0);
+  assert.equal(await page.locator('[name="edgesSpecial"]').count(),noFlips?1:0);
+  assert.equal(await page.locator('.memo-row,.memo-step,.memo-board svg').count(),0);
+  await page.locator('[name="corners"]').fill('ZZ');await page.locator('#memo-answer-form button').click();
+  assert((await page.locator('.memo-result').innerText()).includes('needs another look'));
+  await page.locator('[data-page="settings"]').click();
+  const downloadPromise=page.waitForEvent('download');await page.locator('[data-action="export-backup"]').click();
+  const downloaded=await downloadPromise;await downloaded.saveAs('.build/blind-browser-backup.json');
+  assert(downloaded.suggestedFilename().startsWith('blind-memo-backup-'));
+  const historyBeforeImport=await page.evaluate(()=>window.blindMemoQA().state.history.length);
+  page.once('dialog',dialog=>dialog.accept());
+  await page.locator('#backup-file').setInputFiles('.build/blind-browser-backup.json');
+  await page.waitForFunction(()=>document.querySelector('#notice').textContent==='Backup imported.');
+  assert.equal(await page.evaluate(()=>window.blindMemoQA().state.history.length),historyBeforeImport);
+  assert.equal(await page.evaluate(()=>window.blindMemoQA().state.memoHistory.length),2);
+  await page.locator('[data-page="progress"]').click();assert((await page.locator('main').innerText()).includes('2 runs'));
+  await page.setViewportSize({width:390,height:844});
+  for(const tab of ['recall','memo','library','progress','settings']){
+    await page.locator(`[data-page="${tab}"]`).click();
+    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${tab} overflows iPhone width`);
+    await page.screenshot({path:`.build/blind-phone-${tab}.png`,fullPage:true});
+  }
+  await page.locator('[data-page="recall"]').click();await page.locator('#recall-start').click();await page.waitForTimeout(150);
+  await page.screenshot({path:'.build/blind-phone-pieces.png',fullPage:true});
+  await page.keyboard.press('Space');assert(await page.locator('[data-rating="good"]').isVisible());
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+  await page.keyboard.press('2');
+  await page.locator('[data-page="memo"]').click();await startMemoWithSeed(15);
+  await page.screenshot({path:'.build/blind-phone-memo-running.png',fullPage:true});
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+  await page.keyboard.press('Space');await page.waitForSelector('#memo-answer-form');
+  assert.equal(await page.locator('.memo-row,.memo-step,.memo-board svg').count(),0,'Phone answer entry must hide the prompt');
+  assert(await page.locator('[name="edgesSpecial"]').isVisible());
+  await page.screenshot({path:'.build/blind-phone-memo-hidden-answer.png',fullPage:true});
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+  await page.locator('[name="corners"]').fill('ZZ');await page.locator('#memo-answer-form button').click();
+  assert(await page.locator('.memo-step svg').count()>0);
+  // The installed worker must serve every required module after disconnection.
+  await page.waitForFunction(()=>document.querySelector('#offline-status')?.textContent.includes('Ready offline'),{timeout:15000});
+  await page.reload();await waitReady();await context.setOffline(true);await page.reload();await waitReady();
+  assert.equal(await page.locator('#recall-start').count(),1);
+  assert.deepEqual(errors,[]);
+  console.log('PASS: desktop and 390px phone recall, hidden full-memo answer prompts, restored review diagrams, conditional flip/twist fields, durable history, private choices, backups and offline restart.');
+}finally{await browser.close();}

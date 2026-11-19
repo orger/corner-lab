@@ -2,11 +2,11 @@ import { CASES, GROUPS, SETS } from './catalog.js';
 import { DEFAULT_SPEED_WINDOW, MAX_SPEED_WINDOW, DEFAULT_RANK_COUNT, MAX_RANK_COUNT, DEFAULT_INSIGHTS_WINDOW, MAX_INSIGHTS_WINDOW } from './stats.js';
 import { normalizeAlg, validateAlternative } from './cube.js';
 import { FIRST_FACE_CASES, DEFAULT_FIRST_FACE_CASE_IDS } from './first-face-cases.js';
-import { freshLTEData, validateLTEData, freshLTCData, validateLTCData } from './lte-storage.js';
+import { freshLTEData, validateLTEData, freshLTCData, validateLTCData, freshSQ1Data, validateSQ1Data } from './lte-storage.js';
 
 export const SCHEMA_VERSION=1;
 const KEY='corner-lab-v1';
-export function freshData() { return {version:SCHEMA_VERSION,trainer:'2x2',settings:{selectedCases:[],preAuf:['','U',"U'",'U2'],postAuf:['','U',"U'",'U2'],bottomAuf:['','D','D2',"D'"],orientations:[''],colors:['white'],mode:'last-layer',timingMode:'simple',inspectionAudio:false,strategy:'uniform',slowWindow:DEFAULT_SPEED_WINDOW,rankCount:DEFAULT_RANK_COUNT,insightsWindow:DEFAULT_INSIGHTS_WINDOW,finishIds:[...DEFAULT_FIRST_FACE_CASE_IDS],record:true,showPreview:true},preferences:{},attempts:[],presets:[],lte:freshLTEData(),ltc:freshLTCData()}; }
+export function freshData() { return {version:SCHEMA_VERSION,trainer:'2x2',settings:{selectedCases:[],preAuf:['','U',"U'",'U2'],postAuf:['','U',"U'",'U2'],bottomAuf:['','D','D2',"D'"],orientations:[''],colors:['white'],mode:'last-layer',timingMode:'simple',inspectionAudio:false,strategy:'uniform',slowWindow:DEFAULT_SPEED_WINDOW,rankCount:DEFAULT_RANK_COUNT,insightsWindow:DEFAULT_INSIGHTS_WINDOW,finishIds:[...DEFAULT_FIRST_FACE_CASE_IDS],record:true,showPreview:true},preferences:{},attempts:[],presets:[],lte:freshLTEData(),ltc:freshLTCData(),sq1:freshSQ1Data()}; }
 
 const casesById = new Map(CASES.map(item => [item.id, item]));
 const finishIds = new Set(FIRST_FACE_CASES.map(item => item.id));
@@ -185,12 +185,12 @@ function attempt(value, knownIds) {
  * Optional history fields remain optional for early version-1 solve records.
  */
 export function validateData(input) {
-  object(input, 'backup', ['version', 'initialized', 'trainer', 'settings', 'preferences', 'attempts', 'presets', 'lte', 'ltc']);
+  object(input, 'backup', ['version', 'initialized', 'trainer', 'settings', 'preferences', 'attempts', 'presets', 'lte', 'ltc', 'sq1']);
   if (input.version !== SCHEMA_VERSION || !Array.isArray(input.attempts) || !Array.isArray(input.presets)) fail('This is not a Corner Lab version 1 backup.');
   const attemptIds = new Set(), presetIds = new Set();
   return {
     version: SCHEMA_VERSION,
-    trainer: own(input, 'trainer') ? choice(input.trainer, ['2x2', '5x5', '5x5-centres'], 'trainer') : '2x2',
+    trainer: own(input, 'trainer') ? choice(input.trainer, ['2x2', '5x5', '5x5-centres', 'square1'], 'trainer') : '2x2',
     initialized: own(input, 'initialized') ? boolean(input.initialized, 'initialized flag') : true,
     settings: settings(input.settings, 'practice'),
     preferences: preferences(input.preferences),
@@ -204,6 +204,7 @@ export function validateData(input) {
     }),
     lte: own(input, 'lte') ? validateLTEData(input.lte) : freshLTEData(),
     ltc: own(input, 'ltc') ? validateLTCData(input.ltc) : freshLTCData(),
+    sq1: own(input, 'sq1') ? validateSQ1Data(input.sq1) : freshSQ1Data(),
   };
 }
 const DATABASE = 'corner-lab';

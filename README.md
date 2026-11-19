@@ -1,12 +1,26 @@
 # Corner Lab
 
-An offline trainer for Mac and iPhone for deliberate 2×2 practice—CLL, EG1, EG2, AUF recognition, and one-looking—and 5×5 last-two-edges and last-two-centres algorithms.
+## Blind Memo Lab
+
+The separate letter-pair and blindfold memo trainer is in `app/blind/`. It uses the
+supplied memo words, reaction timing, Good / Wrong / Change ratings, weighted
+spaced practice, editable memos, and complete corner/edge trace exercises. It has
+independent storage and backups. Open `dist/Blind Memo Lab.app` for the Mac app;
+the matching iPhone website is built in `dist/blind-web`, configured for
+`blind.orger.org`. The domain needs hosting and DNS setup before it is live.
+
+Run `npm run build:blind:mac` to build both versions, or read the
+[Blind Memo Lab guide](docs/BLIND-MEMO-GUIDE.md) for installation and conventions.
+
+An offline trainer for Mac and iPhone covering 2×2 CLL, EG1, EG2, AUF recognition and one-looking; 5×5 last two edges and last two centres; and Square-1 cube shape.
+
+Choose **Square‑1 · Cube shape** from the trainer menu for all 169 non-cube shape pairs, disguised or inverse setups, independently randomised final layer positions, case selection, timers, learning batches and separate statistics. See the [user guide](docs/USER-GUIDE.md#square-1-cube-shape).
 
 ## Run on iPhone
 
 Web releases target GitHub Pages at `cubing.orger.org`. Updating the source in the existing repository publishes a new version; an installed iPhone app offers an Update button when it is ready.
 
-Once published, open the site in Safari and use **Share → Add to Home Screen**. Open the resulting Corner Lab icon while online and wait for the offline-ready status before practising without a connection. All three trainers run on the phone, and each device keeps its own history. Use full JSON backups to transfer history from the Mac or protect it against cleared browser data; there is no automatic device sync.
+Once published, open the site in Safari and use **Share → Add to Home Screen**. Open the resulting Corner Lab icon while online and wait for the offline-ready status before practising without a connection. All four trainers run on the phone, and each device keeps its own history. Use full JSON backups to transfer history from the Mac or protect it against cleared browser data; there is no automatic device sync.
 
 See [iPhone installation and GitHub Pages setup](docs/IPHONE-GITHUB-PAGES.md) for the publishing, domain, offline, and backup steps.
 

@@ -1,6 +1,27 @@
 import AppKit
 @preconcurrency import WebKit
 import UniformTypeIdentifiers
+#if BLIND_MEMO_LAB
+import CryptoKit
+import CommonCrypto
+#endif
+
+/// Both trainers share the shell, but never share their durable data file.
+private enum AppIdentity {
+#if BLIND_MEMO_LAB
+    static let name = "Blind Memo Lab"
+    static let version = "1.0.1"
+    static let filePrefix = "blind-memo-lab"
+    static let windowKey = "BlindMemoLabMainWindow"
+    static let credits = "Letter-pair recall and blindfold memo practice.\nYour memos and practice history stay on this Mac."
+#else
+    static let name = "Corner Lab"
+    static let version = "1.7.1"
+    static let filePrefix = "corner-lab"
+    static let windowKey = "CornerLabMainWindow"
+    static let credits = "2×2 CLL/EG, 5×5 last-two-edges / last-two-centres and Square-1 cube-shape practice.\nYour algorithms and practice history stay on this Mac."
+#endif
+}
 
 /// All app resources are local. The custom origin allows ES modules to work offline.
 final class AppSchemeHandler: NSObject, WKURLSchemeHandler {
@@ -44,7 +65,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     init(resourceRoot: URL? = nil, storeURL: URL? = nil, onLoad: ((WKWebView) -> Void)? = nil) {
         self.resourceRoot = resourceRoot ?? Bundle.main.resourceURL!.appendingPathComponent("app", isDirectory: true)
         self.storeURL = storeURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("Corner Lab", isDirectory: true).appendingPathComponent("data.json")
+            .appendingPathComponent(AppIdentity.name, isDirectory: true).appendingPathComponent("data.json")
         self.onLoad = onLoad
         super.init()
     }
@@ -65,11 +86,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         webView.allowsBackForwardNavigationGestures = false
         if #available(macOS 13.3, *) { webView.isInspectable = true }
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1440, height: 940), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
-        window.title = "Corner Lab"
+        window.title = AppIdentity.name
         window.minSize = NSSize(width: 980, height: 680)
         window.contentView = webView
         window.center()
-        window.setFrameAutosaveName("CornerLabMainWindow")
+        window.setFrameAutosaveName(AppIdentity.windowKey)
         window.makeKeyAndOrderFront(nil)
         window.isReleasedWhenClosed = false
         NSApp.activate(ignoringOtherApps: true)
@@ -84,11 +105,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         let menu = NSMenu()
         let appItem = NSMenuItem()
         let appMenu = NSMenu()
-        appMenu.addItem(withTitle: "About Corner Lab", action: #selector(showAbout), keyEquivalent: "")
+        appMenu.addItem(withTitle: "About \(AppIdentity.name)", action: #selector(showAbout), keyEquivalent: "")
         appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: "Hide Corner Lab", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        appMenu.addItem(withTitle: "Hide \(AppIdentity.name)", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: "Quit Corner Lab", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: "Quit \(AppIdentity.name)", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = appMenu
         menu.addItem(appItem)
         let editItem = NSMenuItem()
@@ -114,7 +135,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     }
 
     @objc private func showAbout() {
-        NSApp.orderFrontStandardAboutPanel(options: [.applicationName: "Corner Lab", .applicationVersion: "1.6.0", .credits: NSAttributedString(string: "2×2 CLL/EG and 5×5 last-two-edges / last-two-centres practice.\nYour algorithms and practice history stay on this Mac.")])
+        NSApp.orderFrontStandardAboutPanel(options: [.applicationName: AppIdentity.name, .applicationVersion: AppIdentity.version, .credits: NSAttributedString(string: AppIdentity.credits)])
     }
 
     @objc private func reload() { webView.reload() }
@@ -145,8 +166,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             case "export":
                 let data = try encode(body["payload"] ?? NSNull())
                 let panel = NSSavePanel()
-                panel.title = "Export Corner Lab Data"
-                panel.nameFieldStringValue = "corner-lab-backup-\(Self.dateStamp()).json"
+                panel.title = "Export \(AppIdentity.name) Data"
+                panel.nameFieldStringValue = "\(AppIdentity.filePrefix)-backup-\(Self.dateStamp()).json"
                 panel.allowedContentTypes = [.json]
                 panel.beginSheetModal(for: window) { [weak self] result in
                     guard let self = self else { return }
@@ -163,8 +184,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
                     reply(id, error: "The text exceeds the 50 MB export limit."); return
                 }
                 let panel = NSSavePanel()
-                panel.title = "Export Corner Lab Data"
-                let requestedName = (payload["filename"] as? String) ?? "corner-lab-export.csv"
+                panel.title = "Export \(AppIdentity.name) Data"
+                let requestedName = (payload["filename"] as? String) ?? "\(AppIdentity.filePrefix)-export.csv"
                 panel.nameFieldStringValue = URL(fileURLWithPath: requestedName).lastPathComponent
                 let type = payload["contentType"] as? String ?? "text/csv"
                 panel.allowedContentTypes = [UTType(mimeType: type) ?? .plainText]
@@ -176,7 +197,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
                 }
             case "import":
                 let panel = NSOpenPanel()
-                panel.title = "Import Corner Lab Data"
+                panel.title = "Import \(AppIdentity.name) Data"
                 panel.allowedContentTypes = [.json]
                 panel.allowsMultipleSelection = false
                 panel.canChooseDirectories = false
@@ -190,11 +211,82 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
                         self.reply(id, value: value)
                     } catch { self.reply(id, error: error.localizedDescription) }
                 }
-            case "info": reply(id, value: ["platform": "macOS", "dataPath": storeURL.path, "version": "1.6.0"])
+#if BLIND_MEMO_LAB
+            case "decryptMemoDefaults":
+                reply(id, value: try Self.decryptMemoDefaults(body["payload"]))
+#endif
+            case "info": reply(id, value: ["platform": "macOS", "dataPath": storeURL.path, "version": AppIdentity.version])
             default: reply(id, error: "Unknown native storage request.")
             }
         } catch { reply(id, error: error.localizedDescription) }
     }
+
+#if BLIND_MEMO_LAB
+    /// The custom offline origin may not provide WebCrypto. Derive and decrypt
+    /// locally with the same authenticated format used by the browser version.
+    private static func decryptMemoDefaults(_ payload: Any?) throws -> [String: Any] {
+        func invalidVault() -> NSError {
+            NSError(domain: "BlindMemoLab", code: 1, userInfo: [NSLocalizedDescriptionKey: "The encrypted memo file is invalid or unsupported."])
+        }
+        func integer(_ value: Any?) -> Int? {
+            guard let number = value as? NSNumber,
+                  CFGetTypeID(number) != CFBooleanGetTypeID(),
+                  number.doubleValue.isFinite,
+                  number.doubleValue == Double(number.intValue) else { return nil }
+            return number.intValue
+        }
+        guard let request = payload as? [String: Any],
+              let vault = request["vault"] as? [String: Any],
+              let password = request["password"] as? String,
+              !password.isEmpty, password.utf16.count <= 1024, password.utf8.count <= 4096,
+              integer(vault["version"]) == 1,
+              vault["kdf"] as? String == "PBKDF2-SHA256",
+              let iterations = integer(vault["iterations"]),
+              (100_000...2_000_000).contains(iterations),
+              let encodedSalt = vault["salt"] as? String, encodedSalt.utf8.count <= 32,
+              let salt = Data(base64Encoded: encodedSalt), salt.count == 16,
+              let encodedIV = vault["iv"] as? String, encodedIV.utf8.count <= 24,
+              let iv = Data(base64Encoded: encodedIV), iv.count == 12,
+              let encodedCiphertext = vault["ciphertext"] as? String, encodedCiphertext.utf8.count <= 1_400_000,
+              let ciphertext = Data(base64Encoded: encodedCiphertext),
+              (17...1_000_000).contains(ciphertext.count) else { throw invalidVault() }
+
+        let passwordBytes = Array(password.utf8)
+        var derivedKey = [UInt8](repeating: 0, count: 32)
+        defer { _ = derivedKey.withUnsafeMutableBytes { pointer in pointer.initializeMemory(as: UInt8.self, repeating: 0) } }
+        let status = passwordBytes.withUnsafeBytes { passwordPointer in
+            salt.withUnsafeBytes { saltPointer in
+                derivedKey.withUnsafeMutableBytes { keyPointer in
+                    CCKeyDerivationPBKDF(CCPBKDFAlgorithm(kCCPBKDF2),
+                        passwordPointer.baseAddress!.assumingMemoryBound(to: CChar.self), passwordPointer.count,
+                        saltPointer.baseAddress!.assumingMemoryBound(to: UInt8.self), saltPointer.count,
+                        CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256), UInt32(iterations),
+                        keyPointer.baseAddress!.assumingMemoryBound(to: UInt8.self), keyPointer.count)
+                }
+            }
+        }
+        guard status == kCCSuccess else { throw invalidVault() }
+        let plaintext: Data
+        do {
+            let box = try AES.GCM.SealedBox(nonce: AES.GCM.Nonce(data: iv),
+                ciphertext: ciphertext.dropLast(16), tag: ciphertext.suffix(16))
+            plaintext = try AES.GCM.open(box, using: SymmetricKey(data: derivedKey),
+                authenticating: Data("blind-memo-defaults:v1".utf8))
+        } catch {
+            throw NSError(domain: "BlindMemoLab", code: 2, userInfo: [NSLocalizedDescriptionKey: "The password did not unlock the memos, or the encrypted file has changed."])
+        }
+        guard plaintext.count <= 1_000_000,
+              let result = try JSONSerialization.jsonObject(with: plaintext) as? [String: Any],
+              result["format"] as? String == "blind-memo-defaults",
+              integer(result["version"]) == 1,
+              let memos = result["memos"] as? [String: String], memos.count <= 601 else { throw invalidVault() }
+        for (id, memo) in memos {
+            guard id.range(of: "^(pair:[A-X]{2}|flip:[A-Z]{2}|twist:[A-Z]{3}:(CW|CCW))$", options: .regularExpression) != nil,
+                  memo.utf16.count <= 4000 else { throw invalidVault() }
+        }
+        return result
+    }
+#endif
 
     private func encode(_ value: Any) throws -> Data {
         let data = try JSONSerialization.data(withJSONObject: value, options: [.fragmentsAllowed, .prettyPrinted, .sortedKeys])
@@ -230,7 +322,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
 
     func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
         let alert = NSAlert()
-        alert.messageText = "Corner Lab"
+        alert.messageText = AppIdentity.name
         alert.informativeText = message
         alert.addButton(withTitle: "OK")
         alert.beginSheetModal(for: window) { _ in completionHandler() }
@@ -238,7 +330,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
 
     func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (Bool) -> Void) {
         let alert = NSAlert()
-        alert.messageText = "Corner Lab"
+        alert.messageText = AppIdentity.name
         alert.informativeText = message
         alert.alertStyle = .warning
         alert.addButton(withTitle: "Confirm")
@@ -248,7 +340,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
 
     func webView(_ webView: WKWebView, runJavaScriptTextInputPanelWithPrompt prompt: String, defaultText: String?, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (String?) -> Void) {
         let alert = NSAlert()
-        alert.messageText = "Corner Lab"
+        alert.messageText = AppIdentity.name
         alert.informativeText = prompt
         let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 360, height: 26))
         input.stringValue = defaultText ?? ""
@@ -256,6 +348,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         alert.addButton(withTitle: "OK")
         alert.addButton(withTitle: "Cancel")
         alert.beginSheetModal(for: window) { response in completionHandler(response == .alertFirstButtonReturn ? input.stringValue : nil) }
+    }
+
+    private static var memoBridgeMethods: String {
+#if BLIND_MEMO_LAB
+        return "decryptMemoDefaults: (vault, password) => request('decryptMemoDefaults', { vault, password }),"
+#else
+        return ""
+#endif
     }
 
     private static let bridgeScript = #"""
@@ -282,6 +382,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         exportText: (filename, content, contentType = 'text/csv') => request('exportText', { filename, content, contentType }),
         importData: () => request('import'),
         info: () => request('info'),
+        \#(memoBridgeMethods)
       }), writable: false });
       document.addEventListener('DOMContentLoaded', () => window.dispatchEvent(new Event('cornerlab-native-ready')), { once: true });
     })();
