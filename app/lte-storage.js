@@ -2,12 +2,22 @@ import { CASES5 } from './catalog5.js';
 import { DEFAULT_SPEED_WINDOW, MAX_SPEED_WINDOW, DEFAULT_RANK_COUNT, MAX_RANK_COUNT, DEFAULT_INSIGHTS_WINDOW, MAX_INSIGHTS_WINDOW } from './stats.js';
 import { CASES_CENTRES } from './catalog-centres.js';
 import { CASES_SQ1 } from './catalog-square1.js';
+import { CASES_SQ1_OBL } from './catalog-square1-obl.js';
+import { CASES_SQ1_EP } from './catalog-square1-ep.js';
+import { CASES_SKEWB_NS2 } from './catalog-skewb-ns2.js';
 import { parseSquare1Alg } from './square1.js';
+import { parseSkewbAlg } from './skewb.js';
 
 const edges = { cases: CASES5, casesById: new Map(CASES5.map(item => [item.id, item])), label: '5×5' };
 const centres = { cases: CASES_CENTRES, casesById: new Map(CASES_CENTRES.map(item => [item.id, item])), label: '5×5 centres' };
 const square1 = { cases: CASES_SQ1, casesById: new Map(CASES_SQ1.map(item => [item.id, item])), label: 'Square-1', orientations: [''], parseAlgorithm: parseSquare1Alg,
   scrambleStyles: ['provided', 'varied', 'disguised'], defaultScrambleStyle: 'disguised', layerAlignments: ['random', 'reference'] };
+const square1Stage = (cases, label) => ({ cases, casesById: new Map(cases.map(item => [item.id, item])), label, orientations: [''], parseAlgorithm: parseSquare1Alg,
+  scrambleStyles: ['provided', 'disguised'], defaultScrambleStyle: 'disguised', layerAlignments: ['random', 'reference'], layerTurns: [-3, 0, 3, 6] });
+const square1OBL = square1Stage(CASES_SQ1_OBL, 'Square-1 OBL');
+const square1EP = square1Stage(CASES_SQ1_EP, 'Square-1 EP');
+const skewbNS2 = { cases: CASES_SKEWB_NS2, casesById: new Map(CASES_SKEWB_NS2.map(item => [item.id, item])), label: 'Skewb NS2', orientations: [''], parseAlgorithm: parseSkewbAlg,
+  scrambleStyles: ['provided', 'disguised'], defaultScrambleStyle: 'disguised' };
 const orientations = ['', 'y', 'y2', "y'"];
 const timingModes = ['simple', 'inspection'];
 const scrambleStyles = ['provided', 'varied'];
@@ -29,6 +39,9 @@ function freshTrainingData(catalog) {
 export const freshLTEData = () => freshTrainingData(edges);
 export const freshLTCData = () => freshTrainingData(centres);
 export const freshSQ1Data = () => freshTrainingData(square1);
+export const freshSQ1OBLData = () => freshTrainingData(square1OBL);
+export const freshSQ1EPData = () => freshTrainingData(square1EP);
+export const freshSkewbNS2Data = () => freshTrainingData(skewbNS2);
 
 function object(value, label, keys) {
   if (!value || typeof value !== 'object' || Array.isArray(value) ||
@@ -137,6 +150,7 @@ function attempt(value, knownIds, catalog) {
     if (own(value, 'layerAlignment')) result.layerAlignment = choice(value.layerAlignment, catalog.layerAlignments, `${label} solve layer alignment`);
     for (const field of ['initialTop', 'initialBottom']) if (own(value, field)) {
       if (!Number.isInteger(value[field]) || value[field] < -5 || value[field] > 6) fail(`Invalid ${label} solve ${field}: expected a whole number from -5 to 6.`);
+      if (catalog.layerTurns) choice(value[field], catalog.layerTurns, `${label} solve ${field}`);
       result[field] = value[field];
     }
   }
@@ -175,3 +189,6 @@ function validateTrainingData(value, catalog) {
 export const validateLTEData = value => validateTrainingData(value, edges);
 export const validateLTCData = value => validateTrainingData(value, centres);
 export const validateSQ1Data = value => validateTrainingData(value, square1);
+export const validateSQ1OBLData = value => validateTrainingData(value, square1OBL);
+export const validateSQ1EPData = value => validateTrainingData(value, square1EP);
+export const validateSkewbNS2Data = value => validateTrainingData(value, skewbNS2);

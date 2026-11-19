@@ -2,11 +2,13 @@
 
 Corner Lab trains 2×2 CLL, EG1, EG2, recognition AUF, finishing AUF, and short
 one-look solutions with the first face on the bottom. It also trains 5×5 last
-two edges, last two centres, and Square-1 cube shape. Choose a trainer from the selector beside the
+two edges, last two centres, Square-1 cube shape, OBL and EP, and Skewb NS2.
+Choose one of the seven trainers from the selector beside the
 app name. You use your physical cube and record times with the keyboard, a
 button, or manual entry. The following practice instructions describe the 2×2
 trainer; see [5X5-GUIDE.md](5X5-GUIDE.md) for 5×5 practice and
-[Square-1 cube shape](#square-1-cube-shape) below for the new shape trainer.
+[Square-1 cube shape](#square-1-cube-shape), [OBL and EP](#square-1-obl-and-ep),
+and [Skewb NS2](#skewb-ns2) below for their goals and notation.
 
 ## Start a practice
 
@@ -351,12 +353,13 @@ slowest typical time, most inconsistency, or least practice. Small groups show
 ## Track progress across a complete algorithm set
 
 Open **Insights** in any trainer and use the **Full-set progress** card. Its
-**Full algorithm set** selector offers nine choices:
+**Full algorithm set** selector offers thirteen choices:
 
 - 2×2 CLL, EG1, or EG2 individually.
 - CLL + EG1, CLL + EG2, EG1 + EG2, or all three together.
 - 5×5 last two edges or 5×5 last two centres.
-- Square-1 cube shape.
+- Square-1 cube shape, OBL, or EP.
+- Skewb NS2.
 
 The single curve summarises the selected algorithm set. Choose **Solves per
 case (N)** from 1 to 100; the default is 5. For each case, the app takes the
@@ -416,7 +419,7 @@ The card always uses the **complete selected algorithm set**, independent of
 the cases currently selected for practice and of the other Insights filters
 below it. Its controls last for the current app session and are not stored in
 saved practice presets. Switching trainer selects that trainer's full set as
-the initial chart choice, while the selector still offers all nine choices.
+the initial chart choice, while the selector still offers all thirteen choices.
 Deleting, resetting, importing or changing flags on stored results recalculates
 the chart from the remaining eligible history.
 
@@ -458,12 +461,17 @@ preferred and personal algorithms, saved practices, and all results. **Import
 backup…** validates its structure and personal algorithms before asking to
 replace the current data. Import replaces data; it does not merge histories.
 
+One backup contains all seven trainers. Each retains its own case selection,
+preferred algorithms, settings, practices and results. Backups from older
+versions load with new trainers empty; their recorded times and algorithm text
+are preserved. CSV exports and filtered resets affect the current trainer only.
+
 If a saved file cannot be loaded or a save fails, the app shows the error.
 Existing saved data is not silently replaced with fresh defaults after a load
 failure. Export any current in-memory results you need to preserve, and import
 a valid backup to restore normal saving.
 
-The browser preview uses its own localStorage and is separate from the Mac
+The browser or installed web app keeps its own device storage, separate from the Mac
 app. Transfer data between them using JSON export/import. All practice, diagrams,
 algorithms, and statistics work offline. Source links open external reference
 pages only when you choose to follow them.
@@ -515,8 +523,103 @@ recall focus work as in the other trainers. Inspection and solve times are
 recorded separately. Insights includes inspection averages and percentages
 under 15, 12 and 8 seconds, as well as the full-set progress chart and its date
 sliders. Filters, CSV exports and resets apply only to Square-1 results. Full
-backups include all four trainers; older backups open with a fresh Square-1
-section.
+backups include all seven trainers. Older backups gain independent empty sections
+for trainers they did not yet contain, while their existing histories stay unchanged.
 
 This mode practises cube-shape recognition and execution. It does not train
 cube-shape parity, colour orientation or permutation.
+
+## Square-1 OBL and EP
+
+These are separate stages with separate histories. Select **Square‑1 · OBL**
+or **Square‑1 · EP** in the trainer menu, then choose individual cases or
+pattern groups in **Case library**. Open a case to compare the supplied
+algorithms and choose the one you prefer. Each diagram follows that algorithm's
+reference alignment; the chosen algorithm applies to future setups.
+
+| Trainer | Included cases | When to stop |
+| --- | --- | --- |
+| OBL | 185 cases, including EO; 641 verified algorithm choices | Both layers are square, with white on one layer and yellow on the other; permutation and the middle layer do not matter |
+| EP | 99 cases: 49 without parity and 50 with parity; 169 verified choices | The entire puzzle is solved, including final layer alignment and the equator |
+
+For either trainer, start every setup from a **fully solved Square-1, white up
+and green front**, with red right, blue back and orange left. Match the
+illustrated piece and slice alignment. This starting position is stricter than
+cube-shape practice, where colours can be mixed. EP setups leave both layers
+oriented and the corners permuted up to layer turns, so the task is the
+remaining edge permutation. The solved EP skip is omitted.
+
+The notation is the same numeric **(top, bottom) /** notation as cube shape:
+numbers count 30-degree turns, positive clockwise when looking at the layer
+from outside, and `/` turns the right half 180 degrees. Both diagrams show
+outside views. The bottom therefore mirrors the left/right viewing direction.
+For OBL, read the face colours. For EP, compare the side stickers on edges with
+those on their neighbouring corners.
+
+**Disguised scramble** is the default. OBL chooses an alternative source setup
+and aligns its colour pattern to the selected algorithm. EP combines verified
+edge-permutation routes to reach the full reference state, including the
+equator. These routes hide the direct inverse of your solution. **Inverse
+algorithm** remains available for a direct setup. These are case-training
+setups, not uniform random-state scrambles.
+
+**Starting layer orientation** is independent of setup style. **Random top &
+bottom turns** adds separate 0°, 90°, 180° or 270° turns, written as `0`, `3`,
+`6` or `-3`, after the setup. **Reference orientation** keeps the preferred
+algorithm's starting position. Follow the full reveal: it includes any initial
+alignment and, for EP, the finishing alignment and middle-layer correction.
+
+Both stages share two-press timing, three-press inspection timing, optional
+8s/12s cues, manual entry, Learning batches and all practice-focus choices.
+**Slowest N algs** ranks recent clean median solve times under the current
+algorithm and conditions; **Recall** uses inconsistency and lapse signals.
+Inspection averages and percentages under 15, 12 and 8 seconds remain separate
+from solve times. Insights can filter by case, pattern, algorithm, setup style,
+layer orientation, timing, session and date. Resetting matching results leaves
+the other trainers and your algorithm choices intact.
+
+Their **Full-set progress** charts include the complete OBL or EP catalogue,
+regardless of the selected practice subset. Each practised case contributes
+equally through the mean of its latest up to N eligible solves. Cases with no
+solves are omitted; this chart average is distinct from the clean median used
+for speed-focused practice.
+
+## Skewb NS2
+
+Select **Skewb · NS2** for the **131 NS2 cases** in 20 pattern groups. Only NS2
+is included; the source's separate EG2 set is excluded. The library offers
+**495 verified algorithm choices**. Choose any case subset and a preferred
+algorithm for each case, just as in the other trainers.
+
+Start every setup from a solved Skewb held **white up and green front**: red
+right, orange left, blue back and yellow down. After the setup, a completed
+side is on the bottom; its colour can vary. Keep that side down and solve all
+six faces. A final whole-puzzle rotation does not affect whether it is solved.
+
+**Setups use WCA notation; solutions use explicit NS notation.** These assign
+some letters to different corners. Read a corner name as the three faces that
+meet there, for example UFR means up–front–right.
+
+| Notation | Corner-turn letters |
+| --- | --- |
+| WCA, used in setups | U = UBL; R = DRB; L = DLF; B = DBL |
+| NS uppercase, used in solutions | F = UFR; R = URB; B = UBL; L = ULF |
+| NS lowercase, used in solutions | f = DFR; r = DRB; b = DBL; l = DLF |
+
+Each corner turn is **120° clockwise when looking at that corner**; a prime
+reverses it. Uppercase NS moves turn top corners and lowercase moves turn bottom
+corners. Whole-cube `x`, `y` and `z` rotations use the usual 90-degree convention.
+The source's S/H hammer shorthand has been expanded into explicit turns to
+make the displayed solutions unambiguous. Include any rotations shown.
+
+**Disguised scramble** chooses among **20 verified WCA setups per case**, each
+reaching the same complete state and working with the selected solution.
+**Reference setup** gives a fixed source setup. These are practice setups, not
+uniform random-state scrambles. The diagram shows the actual stickers and the
+completed bottom side; there is no Square-1 layer-orientation control.
+
+The timers, inspection cues, manual entry, Learning batches, recent-speed and
+recall focus, saved practices, inspection statistics and filtered history work
+as in the other trainers. NS2 has its own full-set progress chart, preferences
+and history. Neither its statistics nor filtered resets affect your 2×2,
+5×5 or Square-1 results.

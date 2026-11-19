@@ -9,6 +9,7 @@ struct NativeSmoke {
     static var phase = 0
     static var store: URL!
     static var attemptID = ""
+    static var expandedAttemptIDs: [String: String] = [:]
 
     static func main() throws {
         let root = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
@@ -17,7 +18,7 @@ struct NativeSmoke {
         store = output.appendingPathComponent("data.json")
         delegate = AppDelegate(resourceRoot: root.appendingPathComponent("app", isDirectory: true), storeURL: store, onLoad: run)
         NSApplication.shared.delegate = delegate
-        DispatchQueue.main.asyncAfter(deadline: .now() + 30) { fail("Native smoke test timed out.") }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 60) { fail("Native smoke test timed out.") }
         NSApplication.shared.run()
     }
 
@@ -33,7 +34,7 @@ struct NativeSmoke {
             webView.window?.setContentSize(NSSize(width: 390, height: 844))
         }
         let code = phase == 0 ? firstPass : secondPass
-        webView.callAsyncJavaScript(code, arguments: ["expectedAttemptID": attemptID], in: nil, in: .page) { result in
+        webView.callAsyncJavaScript(code, arguments: ["expectedAttemptID": attemptID, "expectedExpandedIDs": expandedAttemptIDs], in: nil, in: .page) { result in
             switch result {
             case .failure(let error):
                 let details = (error as NSError).userInfo["WKJavaScriptExceptionMessage"] as? String
@@ -43,6 +44,8 @@ struct NativeSmoke {
                 if phase == 0 {
                     guard let details = value as? [String: Any], let id = details["attemptID"] as? String else { fail("Test result did not contain an attempt ID.") }
                     attemptID = id
+                    guard let ids = details["expandedAttemptIDs"] as? [String: String], ids.count == 3 else { fail("New trainer results were not returned.") }
+                    expandedAttemptIDs = ids
                     phase = 1
                     webView.reload()
                 } else {
@@ -54,7 +57,7 @@ struct NativeSmoke {
                               let png = bitmap.representation(using: .png, properties: [:]) else { fail("Phone layout snapshot failed.") }
                         do { try png.write(to: store.deletingLastPathComponent().appendingPathComponent("phone-layout.png")) }
                         catch { fail("Could not save phone layout snapshot.") }
-                        print("PASS: Native app modules, phone layout, UI, bridge, durable save, backup, reload, and isolated data path. Fixture: \(store.path)")
+                        print("PASS: Native modules, Square-1 OBL/EP and Skewb NS2, 390px phone layout, UI, bridge, durable save, backup, reload, and isolated data path. Fixture: \(store.path)")
                         exit(0)
                     }
                 }
@@ -70,6 +73,17 @@ struct NativeSmoke {
     assert(document.querySelector('h1').textContent.includes('corner'), 'Practice UI missing');
     assert(!document.querySelector('.error'), document.querySelector('.error')?.textContent || 'Startup error');
     assert(window.cornerlabNative, 'Native bridge missing');
+    assert(document.querySelector('#trainer-select').options.length === 7, 'Seven trainers must be available');
+    const expandedTrainers = [
+      { id: 'square1-obl', branch: 'sq1obl', count: 185, seconds: 8.25 },
+      { id: 'square1-ep', branch: 'sq1ep', count: 99, seconds: 10.5 },
+      { id: 'skewb-ns2', branch: 'skewbns2', count: 131, seconds: 7.1 }
+    ];
+    const chooseTrainer = id => {
+      const select = document.querySelector('#trainer-select');
+      select.value = id; select.dispatchEvent(new Event('change', { bubbles: true }));
+      assert(document.querySelector('#trainer-select').value === id, 'Trainer selection failed: ' + id);
+    };
     """#
 
     static var firstPass: String { ready + #"""
@@ -98,11 +112,32 @@ struct NativeSmoke {
     assert(saved.sq1.attempts[0].layerAlignment === 'random', 'Square-1 random layer orientation was not saved');
     assert(/\/\s*\(-?\d+,-?\d+\)$/.test(saved.sq1.attempts[0].scramble), 'Square-1 setup does not finish with a layer turn');
     assert(saved.attempts.length === 1, 'Square-1 changed the 2×2 history');
+    const expandedAttemptIDs = {};
+    for (const item of expandedTrainers) {
+      chooseTrainer(item.id);
+      assert(document.querySelector('#lte-manual'), item.id + ' native practice missing');
+      assert(document.querySelector('.lte-preview svg'), item.id + ' diagram missing');
+      assert(document.querySelector('[data-lte-setting="scrambleStyle"]')?.value === 'disguised', item.id + ' default setup style incorrect');
+      document.querySelector('#lte-manual').value = String(item.seconds);
+      document.querySelector('[data-action="lte-manual"]').click();
+      for (let i = 0; i < 80; i++) { saved = await window.cornerlabNative.load(); if (saved[item.branch]?.attempts.length === 1) break; await wait(50); }
+      const record = saved[item.branch]?.attempts[0];
+      assert(record?.seconds === item.seconds, item.id + ' manual result was not persisted');
+      assert(record.scrambleStyle === 'disguised', item.id + ' setup metadata missing');
+      if (item.branch.startsWith('sq1')) {
+        assert(record.layerAlignment === 'random', item.id + ' alignment not retained');
+        assert([-3, 0, 3, 6].includes(record.initialTop) && [-3, 0, 3, 6].includes(record.initialBottom), item.id + ' invalid quarter-turn metadata');
+      } else assert(!Object.hasOwn(record, 'layerAlignment'), 'Skewb stored Square-1-only conditions');
+      assert(summarize(saved[item.branch].attempts).median === item.seconds, item.id + ' statistics cannot read the result');
+      assert(document.querySelector('.scramble-completed'), item.id + ' completed scramble warning missing');
+      expandedAttemptIDs[item.branch] = record.id;
+    }
+    assert(saved.attempts.length === 1 && saved.sq1.attempts.length === 1, 'New trainers changed existing histories');
     const returnTrainer = document.querySelector('#trainer-select');
     returnTrainer.value = '2x2'; returnTrainer.dispatchEvent(new Event('change', { bubbles: true }));
     for (let i = 0; i < 80; i++) { saved = await window.cornerlabNative.load(); if (saved.trainer === '2x2') break; await wait(50); }
     await window.cornerlabNative.save(saved);
-    return { phase: 'before-reload', cases: CASES.length, seconds: saved.attempts[0].seconds, attemptID: saved.attempts[0].id, nativeMethods: Object.keys(window.cornerlabNative), dataPath: info.dataPath };
+    return { phase: 'before-reload', cases: CASES.length, seconds: saved.attempts[0].seconds, attemptID: saved.attempts[0].id, expandedAttemptIDs, nativeMethods: Object.keys(window.cornerlabNative), dataPath: info.dataPath };
     """# }
 
     static var secondPass: String { ready + #"""
@@ -110,6 +145,10 @@ struct NativeSmoke {
     assert(loaded.attempts.length === 1 && loaded.attempts[0].id === expectedAttemptID, 'Saved JSON did not survive reload');
     assert(loaded.attempts[0].seconds === 4.25, 'Attempt changed after reload');
     assert(loaded.sq1.attempts.length === 1 && loaded.sq1.attempts[0].seconds === 6.75, 'Square-1 history changed after reload');
+    for (const item of expandedTrainers) {
+      const records = loaded[item.branch]?.attempts;
+      assert(records?.length === 1 && records[0].seconds === item.seconds && records[0].id === expectedExpandedIDs[item.branch], item.id + ' history changed after reload');
+    }
     document.querySelector('[data-action="nav"][data-page="settings"]').click();
     assert(document.body.innerText.includes('1 2×2 results'), 'App did not restore persisted history');
     assert(document.body.innerText.includes('Application Support'), 'Native settings mode missing');
@@ -134,6 +173,27 @@ struct NativeSmoke {
     assert(document.querySelector('[data-lte-setting="scrambleStyle"]').value === 'disguised', 'Disguised scramble control missing');
     alignment.scrollIntoView({ block: 'center' });
     await wait(100);
-    return { phase: 'after-reload', phoneWidth: innerWidth, square1Attempts: loaded.sq1.attempts.length, restoredAttempts: loaded.attempts.length, libraryCards };
+    const expandedLibraries = {};
+    for (const item of expandedTrainers) {
+      chooseTrainer(item.id);
+      for (const tab of ['library', 'insights', 'settings', 'train']) {
+        document.querySelector('[data-action="nav"][data-page="' + tab + '"]').click();
+        await wait(50);
+        assert(innerWidth === 390, 'Phone viewport width was not applied');
+        assert(document.documentElement.scrollWidth <= innerWidth + 1, item.id + ' phone layout overflow on ' + tab);
+        if (tab === 'library') {
+          expandedLibraries[item.branch] = document.querySelectorAll('.lte-case').length;
+          assert(expandedLibraries[item.branch] === item.count, item.id + ' library coverage mismatch');
+        }
+        if (tab === 'insights') {
+          assert(document.querySelector('[data-progress="set"]')?.value === item.id, item.id + ' progress not selected');
+          assert(document.querySelector('.progress-plot svg'), item.id + ' progress chart missing');
+        }
+      }
+      assert(document.querySelector('.lte-preview svg'), item.id + ' phone preview missing');
+    }
+    window.scrollTo(0, 0);
+    await wait(100);
+    return { phase: 'after-reload', phoneWidth: innerWidth, square1Attempts: loaded.sq1.attempts.length, restoredAttempts: loaded.attempts.length, libraryCards, expandedLibraries };
     """# }
 }

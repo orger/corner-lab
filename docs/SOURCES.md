@@ -259,3 +259,98 @@ orientation may differ. A final independent top/bottom turn chooses among all
 setup and applying the selected algorithm restores cube shape. Tests also
 check that blocked-slice orientations are represented without attempting an
 illegal slice in the setup.
+
+## Square-1 OBL and EP
+
+The OBL catalogue includes **185 cases and 641 verified algorithm choices**
+from Malte Ihlefeld's [Square-1 OBL trainer](https://mihlefeld.github.io/Alg-Trainers/Sq1-OBL-Trainer/index.html?select).
+The source is [Alg-Trainers](https://github.com/mihlefeld/Alg-Trainers), commit
+`3d19a613932319e33219105ad5bfd1f7a128ff24`, under GPL-3.0. Relevant source files
+are `Sq1-OBL-Trainer/algs_info.json`, `scrambles.json` and `groups_info.json`.
+Seven EO cases and all of the one- through six-slice groups are included.
+Case IDs remain stable as `SQ1-OBL-001` through `SQ1-OBL-185`; alternatives
+retain source identifiers rather than deriving identity from display order.
+
+The EP catalogue covers all **99 non-skip cases** in Sarah Strong's
+[Square-1 EP collection](https://sarah.cubing.net/square-1/ep): **49 without
+parity and 50 with parity**. It includes **169 verified algorithm choices**,
+with numeric alternatives also consulted from Alg-Trainers'
+`Sq1-CPEP-Trainer` at the same commit. Functional move sequences and source
+identifiers are retained; no source website code or diagram images are copied.
+The EP case numbering follows Sarah's collection, including its bottom/top
+permutation ordering. IDs are `SQ1-EP-01` through `SQ1-EP-99`.
+
+Runtime data lives in `app/data-square1-obl.js` and
+`app/data-square1-ep.js`, with stable catalogue wrappers beside them. The
+existing Square-1 sector model tracks the individual corner and edge pieces.
+The new stage engine uses those identities to check face-colour orientation,
+corner permutation, edge permutation and equator orientation. Coloured SVG
+diagrams are generated from the actual simulated state. Reference colours are
+white up, yellow down, green front, red right, blue back and orange left.
+
+OBL's goal is cube shape with each layer showing one face colour; permutation
+and equator orientation are outside that stage. Disguised OBL setups choose
+alternative source routes and align the colour pattern required by the
+preferred algorithm. They exclude the direct inverse and routes shorter than
+three slices. EP starts after orientation and corner permutation. Its disguised
+setup combines two different edge-only routes from a verified lookup of 576
+permutations, matching the full preferred reference state including the
+equator. The complete EP reveal finishes the puzzle rather than leaving a
+middle-layer correction implicit.
+
+Both stages optionally add independent final quarter turns from `0`, `3`, `6`
+and `-3` on each layer; these are distinct from the twelve-position random
+alignment used by cube-shape practice. The full reveal includes the inverse
+starting alignment. Their histories and algorithm preferences are independent
+of the original cube-shape catalogue. Tests verify catalogue coverage,
+notation, state goals, alternative algorithms, disguised routes and layer
+alignments. The setups are designed for case practice, not uniform sampling of
+all legal puzzle states.
+
+## Skewb NS2
+
+The Skewb catalogue uses only the **131 NS2 cases in 20 groups** from Malte
+Ihlefeld's [Skewb NS2 trainer](https://mihlefeld.github.io/Alg-Trainers/Skewb-NS2-Trainer/index.html?select).
+Its separate EG2 collection is excluded. The source is Alg-Trainers commit
+`3d19a613932319e33219105ad5bfd1f7a128ff24`, files
+`Skewb-NS2-Trainer/algs_info.json` and `scrambles.json`, under GPL-3.0.
+The NS2-only snapshot is retained in `scripts/skewb-ns2-source.json`.
+
+`scripts/build-skewb-catalog.mjs` produces the runtime catalogue and
+`scripts/skewb-catalog-report.json`. It retains **495 verified alternatives**;
+**81 source alternatives** are omitted because they did not pass exact-state
+verification under the supported source notation interpretations. The report
+records those decisions. All cases retain a completed bottom side after setup,
+and every accepted alternative solves its case completely, allowing a final
+whole-puzzle rotation. No source SVG images or trainer code are used.
+
+Source algorithms mix Sarah-style and NS S/H shorthand. The generated
+catalogue expands accepted solutions to explicit **NS corner turns**, preserving
+the original text and notation metadata for attribution. Setups use **WCA Skewb
+notation**. The two alphabets are interpreted separately: WCA U/R/L/B act around
+UBL/DRB/DLF/DBL; NS F/R/B/L act around UFR/URB/UBL/ULF and lowercase f/r/b/l
+around DFR/DRB/DBL/DLF. The WCA mapping is independently documented in
+[cubing.js's Skewb notation mapper](https://github.com/cubing/cubing.js/blob/main/src/cubing/puzzle-geometry/notation-mapping/SkewbNotationMapper.ts).
+Corner turns are 120 degrees; whole-puzzle x/y/z rotations are 90 degrees.
+
+The new geometric simulator rotates corner and centre stickers and the app
+draws its own state-based diagrams. It verifies **2,620 prepared WCA setups**,
+20 per case, all reaching their case's exact reference state. Disguised mode
+chooses among those equivalent setups; reference mode uses the source's fixed
+setup. This is case practice, not a claim of uniform random-state scrambling.
+Source colours are white up, yellow down, green front, red right, blue back and
+orange left; the completed bottom side after setup can have a different colour.
+
+Rebuild and validate the Skewb catalogue locally with:
+
+```sh
+node scripts/build-skewb-catalog.mjs
+node --test tests/skewb.test.js tests/trainer-expansion-storage.test.js
+```
+
+All seven Corner Lab trainers share timing and statistics code but retain
+independent histories. Full-set charts average the recent means of individual
+cases with equal weight; practice speed rankings use recent clean medians.
+Neither graph values nor historical algorithm text are rewritten during a
+catalogue update. Supplied PDFs, personal backups and synthetic test data are
+excluded from web releases.

@@ -1,0 +1,503 @@
+{
+  "source": "Alg-Trainers by Malte Ihlefeld",
+  "sourceUrl": "https://mihlefeld.github.io/Alg-Trainers/Skewb-NS2-Trainer/index.html?select",
+  "repository": "https://github.com/mihlefeld/Alg-Trainers",
+  "commit": "3d19a613932319e33219105ad5bfd1f7a128ff24",
+  "license": "GPL-3.0",
+  "cases": 131,
+  "groups": 20,
+  "sourceAlgorithms": 576,
+  "verifiedAlgorithms": 495,
+  "omittedAlgorithms": 81,
+  "duplicateAlgorithms": 0,
+  "preparedScrambles": 2620,
+  "rejected": [
+    {
+      "caseId": "NS2-001",
+      "sourceIndex": 1,
+      "originalAlg": "H y H y' S y H",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-002",
+      "sourceIndex": 4,
+      "originalAlg": "y x r' R r R z2 r' R r R' z' R r' R' r'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-002",
+      "sourceIndex": 6,
+      "originalAlg": "b' r l r l' r b' l'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-004",
+      "sourceIndex": 0,
+      "originalAlg": "y H y' H y S y' H",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-004",
+      "sourceIndex": 1,
+      "originalAlg": "y S y' H y H y' H",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-005",
+      "sourceIndex": 1,
+      "originalAlg": "S y H y' S y H",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-008",
+      "sourceIndex": 5,
+      "originalAlg": "x2 y B' r' R B' r R r R'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-009",
+      "sourceIndex": 0,
+      "originalAlg": "y' S y2 H y' S y' S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-009",
+      "sourceIndex": 2,
+      "originalAlg": "y' x R B R' B' R' r' R r R r' R' r",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-009",
+      "sourceIndex": 3,
+      "originalAlg": "y x r' R r R' r' R' r R B R B' R'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-009",
+      "sourceIndex": 4,
+      "originalAlg": "B' r' l r' l' B' r' b'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-010",
+      "sourceIndex": 2,
+      "originalAlg": "y x R' r' R r R B R' B' R' B R B'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-011",
+      "sourceIndex": 0,
+      "originalAlg": "y S z S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-012",
+      "sourceIndex": 0,
+      "originalAlg": "y2 H z' S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-013",
+      "sourceIndex": 1,
+      "originalAlg": "y S y S y H y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-015",
+      "sourceIndex": 0,
+      "originalAlg": "y H z S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-016",
+      "sourceIndex": 0,
+      "originalAlg": "y2 S z' S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-018",
+      "sourceIndex": 1,
+      "originalAlg": "z y' S y2 S x z2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-023",
+      "sourceIndex": 0,
+      "originalAlg": "y S y2 z' S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-024",
+      "sourceIndex": 4,
+      "originalAlg": "y2 r' R' r z r' R r R' r2/r' R r' R'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-026",
+      "sourceIndex": 0,
+      "originalAlg": "y S S z' S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-027",
+      "sourceIndex": 0,
+      "originalAlg": "y' S S y2 z' S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-028",
+      "sourceIndex": 0,
+      "originalAlg": "S S z S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-033",
+      "sourceIndex": 0,
+      "originalAlg": "y2 S S y' S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-033",
+      "sourceIndex": 3,
+      "originalAlg": "x R r R' r B r' z' r' R r R' b",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-044",
+      "sourceIndex": 0,
+      "originalAlg": "y S y2 S y S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-045",
+      "sourceIndex": 0,
+      "originalAlg": "H x' z S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-045",
+      "sourceIndex": 2,
+      "originalAlg": "x r' R' r B' r' R r B",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-048",
+      "sourceIndex": 0,
+      "originalAlg": "y' S x' z S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-049",
+      "sourceIndex": 4,
+      "originalAlg": "y x r R r R' r' R r' R' r R r' R'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-052",
+      "sourceIndex": 5,
+      "originalAlg": "y x R r' R r R r B R B' r' R'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-053",
+      "sourceIndex": 0,
+      "originalAlg": "S S z S S S x r' R r R r' z' r' R r z r R r'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-054",
+      "sourceIndex": 0,
+      "originalAlg": "z' S S z' S S S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-057",
+      "sourceIndex": 6,
+      "originalAlg": "y x R r' R' r b' r' R r R' z' R r' R' r'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-059",
+      "sourceIndex": 2,
+      "originalAlg": "y S y' S z' S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-060",
+      "sourceIndex": 1,
+      "originalAlg": "S y' H x z S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-060",
+      "sourceIndex": 2,
+      "originalAlg": "y2 H y H x S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-061",
+      "sourceIndex": 1,
+      "originalAlg": "y' H y S z S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-061",
+      "sourceIndex": 2,
+      "originalAlg": "y S y' S x' z S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-062",
+      "sourceIndex": 1,
+      "originalAlg": "y2 S y S z S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-063",
+      "sourceIndex": 1,
+      "originalAlg": "y H y' H z' S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-064",
+      "sourceIndex": 1,
+      "originalAlg": "H y' S z' S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-064",
+      "sourceIndex": 2,
+      "originalAlg": "y2 S y' S x' z S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-065",
+      "sourceIndex": 1,
+      "originalAlg": "y H y' H x' z S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-065",
+      "sourceIndex": 2,
+      "originalAlg": "y' S y H z S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-065",
+      "sourceIndex": 4,
+      "originalAlg": "y2 x R r' R r' R' z' r' R r R B'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-066",
+      "sourceIndex": 0,
+      "originalAlg": "y' H y S z' S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-067",
+      "sourceIndex": 0,
+      "originalAlg": "S y' H z S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-068",
+      "sourceIndex": 0,
+      "originalAlg": "y S y' S z S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-069",
+      "sourceIndex": 0,
+      "originalAlg": "y2 H y' H z' S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-069",
+      "sourceIndex": 5,
+      "originalAlg": "y x r' R' z' r' R' r B R' y' r R' z' r' R r B R",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-070",
+      "sourceIndex": 0,
+      "originalAlg": "y' S y H z' S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-071",
+      "sourceIndex": 0,
+      "originalAlg": "H y' S z S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-071",
+      "sourceIndex": 2,
+      "originalAlg": "S y' S y' S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-072",
+      "sourceIndex": 0,
+      "originalAlg": "y H y' H z S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-072",
+      "sourceIndex": 2,
+      "originalAlg": "H y S y' S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-073",
+      "sourceIndex": 0,
+      "originalAlg": "y2 S y S z' S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-073",
+      "sourceIndex": 1,
+      "originalAlg": "y S y2 S y' S y' H S y H y S y2 S",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-078",
+      "sourceIndex": 0,
+      "originalAlg": "y S y' H",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-092",
+      "sourceIndex": 2,
+      "originalAlg": "y x r R' r' z r' R' r z r R",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-093",
+      "sourceIndex": 1,
+      "originalAlg": "y r R r' R' x r' R r R'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-099",
+      "sourceIndex": 2,
+      "originalAlg": "y x R B' r' B' r B r B R' B'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-105",
+      "sourceIndex": 2,
+      "originalAlg": "y x R r R' r z' r' R r R' r' R r",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-113",
+      "sourceIndex": 0,
+      "originalAlg": "H H y H",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-114",
+      "sourceIndex": 4,
+      "originalAlg": "x z' B' r' R r R' B' z2 R r' R' r b'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-114",
+      "sourceIndex": 5,
+      "originalAlg": "y' x r' R F' r' R r y2 z' r' R r R'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-115",
+      "sourceIndex": 0,
+      "originalAlg": "r' R' r z S z' S R",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-115",
+      "sourceIndex": 4,
+      "originalAlg": "x z r' R r x R r' R z R r' R' r",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-116",
+      "sourceIndex": 1,
+      "originalAlg": "y' S y' S y' H",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-116",
+      "sourceIndex": 2,
+      "originalAlg": "y x r' R' r R r' R' r' z' r' R' r B",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-116",
+      "sourceIndex": 3,
+      "originalAlg": "y x r R r' R' z' r' R' r z r' R r' R'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-116",
+      "sourceIndex": 4,
+      "originalAlg": "x z' B' r' R r R z R r R' r' R r",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-116",
+      "sourceIndex": 5,
+      "originalAlg": "x z2 R r R' r' R r R z R r R' b'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-116",
+      "sourceIndex": 6,
+      "originalAlg": "x r' R' r R' B R' B' r' R' r R",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-116",
+      "sourceIndex": 7,
+      "originalAlg": "x z R r R' r z' r' R r z R r R' r'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-116",
+      "sourceIndex": 8,
+      "originalAlg": "x z2 R' r' R r B R B' R r' R r",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-118",
+      "sourceIndex": 1,
+      "originalAlg": "y2 x r B r' z' b' r' R' r b",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-118",
+      "sourceIndex": 4,
+      "originalAlg": "y' x R' r' B' r B R r R' B'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-122",
+      "sourceIndex": 3,
+      "originalAlg": "x r' B' r' B' r B R r R r",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-122",
+      "sourceIndex": 5,
+      "originalAlg": "z r2' R' r b z r B r' z' b' r",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    },
+    {
+      "caseId": "NS2-129",
+      "sourceIndex": 4,
+      "originalAlg": "y' x B r' R r R' r R y' r' R r B'",
+      "reason": "Does not solve the supplied reference state under either documented hammer convention."
+    }
+  ],
+  "duplicates": []
+}

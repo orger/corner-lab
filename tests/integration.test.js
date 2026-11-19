@@ -13,6 +13,9 @@ import { createCentresDrill } from '../app/centres-drill.js';
 import { createProgressView } from '../app/progress.js';
 import * as cube from '../app/cube.js';
 import { createLTETrainer } from '../app/lte.js';
+import { ADDITIONAL_TRAINERS } from '../app/additional-trainers.js';
+import { isOBLSolved, isEPSolved } from '../app/square1-last-layer.js';
+import { applySkewbAlg, isSolvedSkewb } from '../app/skewb.js';
 import * as firstFace from '../app/first-face-cases.js';
 import * as cubeview from '../app/cubeview.js';
 import * as stats from '../app/stats.js';
@@ -54,7 +57,7 @@ async function controller(settings = {}, random = () => 0.25, stored = {}) {
     },
   };
   const context = vm.createContext({
-    ...cube, ...cubeview, ...stats, ...firstFace, createLTETrainer, CASES, freshData, validateData,
+    ...cube, ...cubeview, ...stats, ...firstFace, createLTETrainer, ADDITIONAL_TRAINERS, CASES, freshData, validateData,
     CASES_CENTRES, centreSVG5, createCentresDrill, createProgressView,
     CASES_SQ1, createSquare1Drill, solvedSquare1, applySquare1Alg, inverseSquare1, square1SVG,
     loadData: async () => initial,
@@ -83,6 +86,7 @@ async function controller(settings = {}, random = () => 0.25, stored = {}) {
       lteSnapshot: () => lte.snapshot(),
       ltcSnapshot: () => ltc.snapshot(),
       sq1Snapshot: () => sq1.snapshot(),
+      trainerSnapshot: id => trainers.get(id).snapshot(),
       progressSnapshot: () => progress.snapshot(),
       snapshot: () => ({ data, current, phase, lastResult }),
       setSettings: patch => { Object.assign(data.settings, patch); },
@@ -1256,3 +1260,76 @@ test('Square-1 routes all pages and timer stages, preserves other trainers, relo
   reloaded.switchTrainer('2x2');
   assert.equal(reloaded.snapshot().data.trainer, '2x2');
 });
+
+
+for (const entry of ADDITIONAL_TRAINERS) {
+  test(`${entry.label} routes all pages, learns subsets and saves isolated timing and full-set progress`, async () => {
+    const ui = await controller();
+    const data = ui.snapshot().data;
+    const baseline = structuredClone(data);
+    const branch = data[entry.branch];
+    branch.settings.selectedCases = entry.cases.slice(0, 3).map(c => c.id);
+    branch.settings.strategy = 'learning';
+    ui.switchTrainer(entry.id);
+    const seen = [];
+    for (let i = 0; i < 3; i++) {
+      const current = ui.trainerSnapshot(entry.id).current;
+      assert.ok(current, `${entry.id} generated a drill`);
+      seen.push(current.case.id);
+      const finalState = entry.id === 'skewb-ns2' ? applySkewbAlg(current.state, current.solution) : applySquare1Alg(current.state, current.solution);
+      assert.ok(entry.id === 'skewb-ns2' ? isSolvedSkewb(finalState) : entry.id === 'square1-obl' ? isOBLSolved(finalState) : isEPSolved(finalState));
+      if (i < 2) await ui.click('lte-next');
+    }
+    assert.equal(new Set(seen).size, 3);
+    assert.match(ui.nodes.get('#app').innerHTML, /Disguised scramble/);
+    assert.doesNotMatch(ui.nodes.get('#app').innerHTML, /SETUP FROM A SOLVED 5 × 5/);
+    await ui.click('lte-timing', { mode: 'inspection' });
+    await ui.change('', { dataset: { lteSetting: 'inspectionAudio' }, type: 'checkbox', checked: true });
+    ui.setTime(1000); await ui.click('lte-timer');
+    assert.equal(ui.trainerSnapshot(entry.id).phase, 'inspecting');
+    assert.equal(ui.timerActive(), true);
+    ui.switchTrainer('2x2');
+    assert.equal(data.trainer, entry.id);
+    ui.setTime(7400); await ui.click('lte-timer');
+    ui.setTime(10400); await ui.click('lte-timer');
+    const result = branch.attempts[0];
+    assert.equal(result.seconds, 3);
+    assert.equal(result.inspectionSeconds, 6.4);
+    assert.equal(result.inspectionAudio, true);
+    assert.equal(result.set, entry.options.setId);
+    assert.equal(result.scrambleStyle, 'disguised');
+    assert.equal(ui.timerActive(), false);
+    for (const key of ['attempts', 'lte', 'ltc', 'sq1', ...ADDITIONAL_TRAINERS.filter(x => x.id !== entry.id).map(x => x.branch)]) assert.deepEqual(data[key], baseline[key], `${key} remains independent`);
+    await ui.click('nav', { page: 'insights' });
+    assert.equal(ui.progressSnapshot().setId, entry.id);
+    assert.equal(ui.progressSnapshot().result.totalCases, entry.cases.length);
+    assert.equal(ui.progressSnapshot().result.value, 3);
+    assert.match(ui.nodes.get('#app').innerHTML, /Inspection time/);
+    await ui.click('lte-csv');
+    assert.match(ui.downloads.at(-1)[0], new RegExp(entry.options.presentation.exportName));
+    assert.ok(ui.downloads.at(-1)[1].includes(result.caseId));
+    await ui.click('nav', { page: 'library' });
+    assert.match(ui.nodes.get('#app').innerHTML, new RegExp(`${entry.cases.length} .*cases`));
+    const item = entry.cases.find(c => c.algorithms.length > 1);
+    assert.ok(item);
+    await ui.click('lte-detail', { id: item.id });
+    await ui.change('', { name: 'lte-algorithm', value: item.algorithms[1].id });
+    assert.equal(branch.preferences[item.id], item.algorithms[1].id);
+    await ui.click('close-modal');
+    await ui.click('nav', { page: 'settings' });
+    assert.match(ui.nodes.get('#app').innerHTML, /Algorithms & notation/);
+    assert.doesNotMatch(ui.nodes.get('#app').innerHTML, /Rw turns the outer two/);
+    const reloaded = await controller({}, () => .25, validateData(JSON.parse(JSON.stringify(data))));
+    assert.equal(reloaded.snapshot().data.trainer, entry.id);
+    assert.deepEqual(reloaded.snapshot().data[entry.branch].attempts, [result]);
+    await reloaded.click('lte-timer');
+    reloaded.pagehide();
+    assert.equal(reloaded.timerActive(), false);
+    assert.equal(reloaded.snapshot().data[entry.branch].attempts.length, 1);
+    await reloaded.click('nav', { page: 'insights' });
+    await reloaded.click('lte-reset');
+    await reloaded.click('lte-confirm-reset');
+    assert.equal(reloaded.snapshot().data[entry.branch].attempts.length, 0);
+    assert.equal(reloaded.snapshot().data[entry.branch].preferences[item.id], item.algorithms[1].id);
+  });
+}

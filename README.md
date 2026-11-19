@@ -12,15 +12,17 @@ the matching iPhone website is built in `dist/blind-web`, configured for
 Run `npm run build:blind:mac` to build both versions, or read the
 [Blind Memo Lab guide](docs/BLIND-MEMO-GUIDE.md) for installation and conventions.
 
-An offline trainer for Mac and iPhone covering 2×2 CLL, EG1, EG2, AUF recognition and one-looking; 5×5 last two edges and last two centres; and Square-1 cube shape.
+An offline trainer for Mac and iPhone covering 2×2 CLL, EG1, EG2, AUF recognition and one-looking; 5×5 last two edges and last two centres; Square-1 cube shape, OBL and EP; and Skewb NS2.
 
 Choose **Square‑1 · Cube shape** from the trainer menu for all 169 non-cube shape pairs, disguised or inverse setups, independently randomised final layer positions, case selection, timers, learning batches and separate statistics. See the [user guide](docs/USER-GUIDE.md#square-1-cube-shape).
+
+Version **1.8.0** adds **Square‑1 · OBL**, **Square‑1 · EP**, and **Skewb · NS2**. Each offers case subsets, preferred algorithm choices, disguised setups, both timing options, Learning batches, recent-speed and recall practice, filtered statistics and full-set progress charts. Their histories stay independent.
 
 ## Run on iPhone
 
 Web releases target GitHub Pages at `cubing.orger.org`. Updating the source in the existing repository publishes a new version; an installed iPhone app offers an Update button when it is ready.
 
-Once published, open the site in Safari and use **Share → Add to Home Screen**. Open the resulting Corner Lab icon while online and wait for the offline-ready status before practising without a connection. All four trainers run on the phone, and each device keeps its own history. Use full JSON backups to transfer history from the Mac or protect it against cleared browser data; there is no automatic device sync.
+Once published, open the site in Safari and use **Share → Add to Home Screen**. Open the resulting Corner Lab icon while online and wait for the offline-ready status before practising without a connection. All seven trainers run on the phone, and each device keeps its own history. Use full JSON backups to transfer history from the Mac or protect it against cleared browser data; there is no automatic device sync.
 
 See [iPhone installation and GitHub Pages setup](docs/IPHONE-GITHUB-PAGES.md) for the publishing, domain, offline, and backup steps.
 
@@ -58,7 +60,19 @@ Select **5 × 5 · Last two edges** in the Trainer selector below the app name. 
 
 Select **5 × 5 · Last two centres** for the **19 unsolved cases** in your supplied CubeSkills *5x5 L2C Algorithms (Last Two Centers)* PDF. The sheet's solved reference is omitted from timed practice. **Case library** lets you select cases individually or in three groups: **1 centre**, **2 centres**, and **3 centres**, counting displaced pieces on each remaining face. Every case starts with four solved centres and a solved 2×3 front-centre block in the reference grip.
 
-The printed PDF sequence is the solution; its inverse generates the default setup. Optional **Varied equivalent setup** reaches exactly the same pattern using a different sequence. The source's `M` turns only the middle slice in the same direction as `L`; generated setups write this explicitly as `3Lw Lw′`. Diagrams use the app's yellow/green palette for the same patterns shown red/blue in the PDF. Both 5×5 trainers share the timing, inspection cues, practice focus, and filtered statistics tools. Centres, edges, and 2×2 selections, saved practices, and histories stay separate, and full backups contain all three. Read the [5×5 guide](docs/5X5-GUIDE.md) for notation and practice details.
+The printed PDF sequence is the solution; its inverse generates the default setup. Optional **Varied equivalent setup** reaches exactly the same pattern using a different sequence. The source's `M` turns only the middle slice in the same direction as `L`; generated setups write this explicitly as `3Lw Lw′`. Diagrams use the app's yellow/green palette for the same patterns shown red/blue in the PDF. Both 5×5 trainers share the timing, inspection cues, practice focus, and filtered statistics tools. Selections, saved practices and histories stay separate for all seven trainers, and full backups include them all. Read the [5×5 guide](docs/5X5-GUIDE.md) for notation and practice details.
+
+## Square-1 OBL and EP
+
+Choose **Square‑1 · OBL** to orient both square layers. Its **185 cases** include the EO cases; stop when each square layer has one face colour. Permutation and the middle layer are outside this step. Choose **Square‑1 · EP** to finish edge permutation after orientation and corner permutation. All **99 cases**, including **50 parity cases**, are available; follow the full solution to finish the puzzle, including any equator correction.
+
+Start both trainers from a fully solved Square-1, **white up and green front**, with the slice alignment shown in the reference diagram. Disguised setups vary the route to the selected case while preserving what the chosen algorithm needs. Independent final top/bottom quarter turns vary recognition; the reveal includes their alignment. OBL uses face-colour diagrams, while EP also shows the side stickers. See the [stage guide](docs/USER-GUIDE.md#square-1-obl-and-ep).
+
+## Skewb NS2
+
+Choose **Skewb · NS2** for **131 NS2 cases** in 20 pattern groups. Start solved, **white up and green front**, and apply the setup in **WCA Skewb notation**. The completed side is then on the bottom; its colour varies. Stop when the whole Skewb is solved.
+
+Solutions use **explicit NS notation**, where uppercase and lowercase letters turn different corners. This differs from the WCA notation used for setups; Settings and the [NS2 guide](docs/USER-GUIDE.md#skewb-ns2) show the corner mappings. Hammer shorthand is expanded into individual turns. Disguised mode chooses among 20 verified equivalent setups per case. The source's separate EG2 cases are excluded.
 
 ## Coverage and validation
 
@@ -67,7 +81,9 @@ The printed PDF sequence is the solution; its inverse generates the default setu
 - Complete coverage of all 648 legal upper-layer corner states for each fixed bottom permutation.
 - 36 named first-face patterns in the supplied PDF's 22 families, with its primary 1/3/4/5-move solutions; 9 printed secondary choices are retained in the data catalog.
 - 13 supplied 5×5 last-two-edges cases with 27 direction/axis choices, and 19 CubeSkills last-two-centres cases verified against both pages of the supplied PDF.
-- Every generated scramble has a complete, simulator-verified solution. These are case-training scrambles, not competition random-state scrambles.
+- Square-1 includes 169 cube-shape cases, 185 OBL cases with 641 algorithm choices, and 99 EP cases with 169 choices, including all 50 parity cases.
+- Skewb includes 131 NS2 cases in 20 groups with 495 verified algorithm choices; the source's separate EG2 set is excluded.
+- Generated scrambles are checked against the relevant training goal: shape, orientation, permutation, or full solve. These are case-training scrambles, not competition random-state scrambles.
 - Results are timed and flagged by the solver; there is no smart-cube connection or automatic solve detection.
 
 See [sources and case conventions](docs/SOURCES.md). Source names follow Alg-Trainers; numbering on other sites can differ. All first layers are trained on the bottom.
@@ -92,4 +108,4 @@ Tests cover move physics, inverse solutions, every catalog alternative, exhausti
 
 ## License
 
-GPL version 3. Includes adapted algorithm data from Malte Ihlefeld’s Alg-Trainers and mapped choices from J Perm. See [LICENSE](LICENSE), [NOTICE](NOTICE), and [source documentation](docs/SOURCES.md). No warranty.
+GPL version 3. Includes adapted algorithm data from Malte Ihlefeld’s Alg-Trainers and mapped choices from J Perm and Sarah Strong’s Square-1 EP collection. See [LICENSE](LICENSE), [NOTICE](NOTICE), and [source documentation](docs/SOURCES.md). No warranty.

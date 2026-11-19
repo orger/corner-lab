@@ -12,6 +12,12 @@ On the iPhone, reconnect and reopen Corner Lab; when **Update ready** appears,
 choose **Update** while no timer is running. The update keeps the device's data.
 For the Mac version, close Corner Lab and reopen the newly built app bundle.
 
+Version 1.8.0 adds Square-1 OBL, Square-1 EP and Skewb NS2 to the same trainer
+menu on both platforms. After installing that release, older histories remain
+available and each new trainer starts with an empty history. The three
+Square-1 stages keep separate statistics; Skewb includes NS2 only. Check the
+in-app reference grip and notation before starting either puzzle.
+
 ## Publish the trainer
 
 1. Put this project in its own GitHub repository, including `.github/workflows/pages.yml`. Do not upload personal backup files or the Mac application's data. A public repository works with GitHub Free; private-repository Pages requires an eligible paid plan.
@@ -52,7 +58,7 @@ If you prefer branch-based Pages publishing, copy the **contents** of `dist/web`
 
 1. Open the published [cubing.orger.org](https://cubing.orger.org) address in Safari while online.
 2. Open Safari's **Share** menu, choose **Add to Home Screen**, and enable **Open as Web App** if offered. Add Corner Lab. [Apple's installation guide](https://support.apple.com/guide/iphone/open-as-web-app-iphea86e5236/ios) shows the current controls.
-3. Launch Corner Lab from its new icon while still online and wait for **Ready offline**. This saves the app and all four trainers on the phone. Without a connection, the status reads **Offline · ready to practise**.
+3. Launch Corner Lab from its new icon while still online and wait for **Ready offline**. This saves the app and all seven trainers on the phone: 2×2, both 5×5 trainers, Square-1 cube shape / OBL / EP, and Skewb NS2. Without a connection, the status reads **Offline · ready to practise**.
 4. Try opening it with the connection disabled before relying on it away from home. The first load and downloading future versions require internet access.
 
 Tap the large timer or use the on-screen buttons for inspection and solving. **Cancel** stops timing without recording a result. Switching away from the app or locking the phone also cancels an unfinished attempt; it does not resume automatically. The app asks the browser to keep the screen awake during timing where supported.

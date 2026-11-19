@@ -1,9 +1,9 @@
 {
   "name": "corner-lab",
-  "version": "1.7.1",
+  "version": "1.8.0",
   "private": true,
   "type": "module",
-  "description": "Offline 2×2, 5×5 and Square-1 practice for iPhone, the web and macOS",
+  "description": "Offline 2×2, 5×5, Square-1 and Skewb practice for iPhone, the web and macOS",
   "license": "GPL-3.0-only",
   "scripts": {
     "test": "node --test tests/*.test.js",

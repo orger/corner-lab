@@ -1,4 +1,4 @@
-2×2 Alg Trainer
+Corner Lab
 
 The algorithm catalog incorporates data from Alg-Trainers by Malte Ihlefeld:
 https://github.com/mihlefeld/Alg-Trainers
@@ -22,3 +22,18 @@ https://jperm.net/algs/2x2/pbl
 Only move sequences and source identifiers are included; no site code or images
 are included. Algorithms are mechanically verified. These sources do not endorse
 this application. More detail and reproduction instructions: docs/SOURCES.md.
+
+Square-1 OBL and Skewb NS2 catalogue data also incorporates the GPL-3.0
+Alg-Trainers project by Malte Ihlefeld, at source snapshot:
+3d19a613932319e33219105ad5bfd1f7a128ff24
+Source directories: Sq1-OBL-Trainer, Sq1-CPEP-Trainer, Skewb-NS2-Trainer.
+Changes include selecting OBL and NS2-only cases, preserving case/source IDs,
+expanding notation, verifying alternatives, excluding invalid variants,
+constructing equivalent setups, and generating original state-based diagrams.
+
+Square-1 edge-permutation coverage and functional move sequences were consulted
+from Sarah Strong's Square-1 EP collection:
+https://sarah.cubing.net/square-1/ep
+All 99 non-skip EP cases, including all 50 parity cases, are represented. No
+source website code or diagram images are included. These sources do not
+endorse this application. See docs/SOURCES.md for provenance and validation.
