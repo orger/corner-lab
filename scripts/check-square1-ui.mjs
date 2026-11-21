@@ -29,7 +29,7 @@ try {
   assert((await page.locator('.condition-strip').innerText()).includes('Learning batch'));
   const scrambleText = await page.locator('.scramble.lte-scramble').innerText();
   assert.match(scrambleText, /\/\s*\(-?\d+,-?\d+\)$/);
-  assert(scrambleText.split('/').length > 8, 'disguised setup takes a longer route than the selected inverse algorithm');
+  assert(scrambleText.split('/').length - 1 >= 5, 'disguised setup has at least five slices');
   await page.locator('#lte-manual').fill('4.25');
   await page.locator('[data-action="lte-manual"]').click();
   assert(await page.locator('.scramble-completed').count());

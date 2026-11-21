@@ -1,7 +1,7 @@
 /* Only public, bundled app files are cached. Training history stays in storage.js. */
 const CACHE_PREFIX = 'corner-lab-static-';
 // Direct app/ previews keep this source version. build-web assigns a content hash.
-const CACHE_VERSION = 'source-v1.8.0';
+const CACHE_VERSION = 'source-v1.8.1';
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 // The web build replaces this list with every published app asset.
 const PRECACHE = [

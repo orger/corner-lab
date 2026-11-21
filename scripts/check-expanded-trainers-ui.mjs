@@ -81,6 +81,7 @@ try {
     assert(data.attempts[1].inspectionSeconds > 0);
     assert(data.attempts.every(item => item.scrambleStyle === 'disguised'));
     if (trainer.branch.startsWith('sq1')) for (const record of data.attempts) {
+      assert(record.scramble.split('/').length - 1 >= 5, 'Square-1 disguise has at least five slices');
       assert.equal(record.layerAlignment, 'random');
       assert([-3, 0, 3, 6].includes(record.initialTop));
       assert([-3, 0, 3, 6].includes(record.initialBottom));

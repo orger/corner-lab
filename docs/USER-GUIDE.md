@@ -503,7 +503,10 @@ as viewed directly from outside, with the slice line marked.
 
 **Setup style → Disguised scramble** takes a different legal route to the
 selected shape pair, helping you avoid learning the case from the reverse of
-its solution. **Inverse algorithm** keeps the short, direct setup available.
+its solution. It chooses short alternative routes with **at least five slice
+moves** (`/`). Layer turns do not count toward that minimum. These routes are
+not guaranteed to be the shortest possible scrambles. **Inverse algorithm**
+keeps the direct setup available without the five-slice minimum.
 The disguised setup changes piece permutation; only the selected layer shapes
 and their alignment matter for this practice.
 
@@ -556,12 +559,18 @@ outside views. The bottom therefore mirrors the left/right viewing direction.
 For OBL, read the face colours. For EP, compare the side stickers on edges with
 those on their neighbouring corners.
 
-**Disguised scramble** is the default. OBL chooses an alternative source setup
-and aligns its colour pattern to the selected algorithm. EP combines verified
-edge-permutation routes to reach the full reference state, including the
-equator. These routes hide the direct inverse of your solution. **Inverse
-algorithm** remains available for a direct setup. These are case-training
+**Disguised scramble** is the default. Both stages prefer short alternative
+routes with **at least five slice moves** (`/`), counted after cancelling
+redundant moves. The route differs from the direct inverse of your selected
+solution; the app does not claim a globally shortest scramble. OBL aligns the
+resulting colour pattern to the selected algorithm. EP reaches the full
+reference state, including the equator. **Inverse algorithm** remains available
+for a direct setup without the five-slice minimum. These are case-training
 setups, not uniform random-state scrambles.
+
+The five-slice floor can make a previously shorter setup longer, particularly
+for easy OBL cases. It prevents those cases from having very short disguised
+setups while reducing unnecessary length in longer cases.
 
 **Starting layer orientation** is independent of setup style. **Random top &
 bottom turns** adds separate 0°, 90°, 180° or 270° turns, written as `0`, `3`,

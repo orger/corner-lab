@@ -109,6 +109,7 @@ struct NativeSmoke {
     for (let i = 0; i < 80; i++) { saved = await window.cornerlabNative.load(); if (saved.sq1?.attempts.length === 1) break; await wait(50); }
     assert(saved.sq1.attempts[0].seconds === 6.75, 'Square-1 native result was not persisted');
     assert(saved.sq1.attempts[0].scrambleStyle === 'disguised', 'Square-1 did not default to a disguised scramble');
+    assert(saved.sq1.attempts[0].scramble.split('/').length - 1 >= 5, 'Square-1 disguised setup has fewer than five slices');
     assert(saved.sq1.attempts[0].layerAlignment === 'random', 'Square-1 random layer orientation was not saved');
     assert(/\/\s*\(-?\d+,-?\d+\)$/.test(saved.sq1.attempts[0].scramble), 'Square-1 setup does not finish with a layer turn');
     assert(saved.attempts.length === 1, 'Square-1 changed the 2×2 history');
@@ -125,6 +126,7 @@ struct NativeSmoke {
       assert(record?.seconds === item.seconds, item.id + ' manual result was not persisted');
       assert(record.scrambleStyle === 'disguised', item.id + ' setup metadata missing');
       if (item.branch.startsWith('sq1')) {
+        assert(record.scramble.split('/').length - 1 >= 5, item.id + ' disguised setup has fewer than five slices');
         assert(record.layerAlignment === 'random', item.id + ' alignment not retained');
         assert([-3, 0, 3, 6].includes(record.initialTop) && [-3, 0, 3, 6].includes(record.initialBottom), item.id + ' invalid quarter-turn metadata');
       } else assert(!Object.hasOwn(record, 'layerAlignment'), 'Skewb stored Square-1-only conditions');

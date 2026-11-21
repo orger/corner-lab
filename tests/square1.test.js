@@ -182,27 +182,66 @@ test('random ending turns independently cover all 144 top/bottom alignments, inc
   assert(ends.has('0,0'), 'the no-adjustment outcome remains an explicit final turn');
 });
 
-test('disguised setups take legal varied 14-slash routes to every selected shape', () => {
+const sliceCore = algorithm => {
+  const moves = parseSquare1Alg(algorithm), first = moves.findIndex(move => move.type === 'slice');
+  let last = moves.length - 1; while (last >= 0 && moves[last].type !== 'slice') last--;
+  return JSON.stringify(moves.slice(first, last + 1));
+};
+const sliceCount = algorithm => parseSquare1Alg(algorithm).filter(move => move.type === 'slice').length;
+
+// Compare actual piece order independently of the generator's serialized key.
+// Layer rotations and swapping the layers as a whole-puzzle regrip are free.
+function sameLayerPieces(a, b) {
+  return b.some((_, offset) => a.every((piece, index) => piece === b[(index + offset) % 12]));
+}
+function equivalentPieceStates(a, b) {
+  return sameLayerPieces(a.top, b.top) && sameLayerPieces(a.bottom, b.bottom) ||
+    sameLayerPieces(a.top, b.bottom) && sameLayerPieces(a.bottom, b.top);
+}
+
+test('disguised setups take genuine varied 5–7-slice routes to every selected shape', () => {
+  const lengths = [];
   for (const item of CASES_SQ1) {
-    const scrambles = new Set();
+    const scrambles = new Set(), routes = new Set();
     // Constant sources cover deterministic edge cases; the seeded source also
     // exercises independent move and end-alignment choices through the route.
     for (const random of [() => 0, () => .25, () => .5, () => .75, () => .99999, seededRandom(48271)]) {
       const drill = createSquare1Drill({caseId:item.id, alg:item.algorithms[0].alg, scrambleStyle:'disguised', layerAlignment:'random', random});
       const moves = parseSquare1Alg(drill.scramble);
-      assert.equal(moves.filter(move => move.type === 'slice').length, 14, item.name);
+      const length = sliceCount(drill.scramble); lengths.push(length);
+      assert.ok(length >= 5 && length <= 7, `${item.name}: ${length} slices`);
+      assert.ok(length >= Math.max(5, item.slashes), 'respects both the floor and the shape distance');
       assert.equal(moves.at(-1).type, 'turn', 'ending turns are always written after the final slash');
       assert(!moves.some((move, index) => move.type === 'slice' && moves[index + 1]?.type === 'slice'), 'no immediate slice cancellations');
+      const stages = [solvedSquare1()]; let prefix = [];
+      for (const [index, move] of moves.entries()) {
+        prefix.push(move.type === 'slice' ? '/' : `(${move.top},${move.bottom})`);
+        if (move.type !== 'slice') continue;
+        if (stages.length > 1) {
+          assert.ok(moves[index - 1]?.type === 'turn');
+          const before = moves[index - 1];
+          assert.ok(before.top || before.bottom, 'zero alignment cannot disguise an inverse slice pair');
+          assert.ok(before.top !== 6 || before.bottom !== 6, 'a two-slice whole-puzzle flip cannot pad the floor');
+        }
+        const stage = applySquare1Alg(solvedSquare1(), prefix.join(' '));
+        assert.equal(isCubeShape(stage), false, 'no cube-shape premix followed by an exposed inverse');
+        assert.ok(stages.every(previous => !equivalentPieceStates(stage, previous)), 'no identity or regrip loop between slices');
+        stages.push(stage);
+      }
       assert.equal(square1ShapeKey(drill.state), item.id.slice(4));
       assertPieces(drill.state);
       assert.deepEqual(applySquare1Alg(solvedSquare1(), drill.scramble), drill.state);
       assert(isCubeShape(applySquare1Alg(drill.state, drill.solution)), item.name);
       assert.equal(drill.scrambleStyle, 'disguised');
-      assert.notEqual(drill.setup, inverseSquare1(item.algorithms[0].alg));
+      assert.notEqual(sliceCore(drill.setup), sliceCore(inverseSquare1(item.algorithms[0].alg)), 'outer alignment alone cannot disguise the chosen inverse');
       scrambles.add(drill.scramble);
+      routes.add(sliceCore(drill.setup));
     }
     assert(scrambles.size >= 4, `${item.name} has multiple disguised routes`);
+    assert(routes.size >= 2, `${item.name} varies the actual route, not just the final turns`);
   }
+  lengths.sort((a, b) => a - b);
+  assert.deepEqual([lengths[0], lengths[Math.floor(lengths.length / 2)], lengths.at(-1)], [5, 5, 7]);
 });
 
 test('disguise and ending alignment are independent; disguise depends on shape rather than preferred move text', () => {
@@ -218,4 +257,44 @@ test('disguise and ending alignment are independent; disguise depends on shape r
     const equivalent = createSquare1Drill({...options, alg:'(1,0) (-1,0) ' + options.alg, layerAlignment:'reference', random:seededRandom(937)});
     assert.equal(equivalent.scramble, reference.scramble, 'the selected algorithm reverse is not appended to the disguise');
   }
+});
+
+test('short disguise rejects a custom selected inverse even when its turns are split or its outer alignment changes', () => {
+  for (const item of [CASES_SQ1[0], ...[5, 6, 7].map(slashes => CASES_SQ1.find(item => item.slashes === slashes))]) {
+    const options = { caseId: item.id, scrambleStyle: 'disguised', layerAlignment: 'reference' };
+    const first = createSquare1Drill({ ...options, alg: item.algorithms[0].alg, random: seededRandom(326) });
+    const inverse = inverseSquare1(first.setup);
+    const direct = createSquare1Drill({ ...options, alg: inverse, random: seededRandom(326) });
+    assert.notEqual(sliceCore(direct.setup), sliceCore(first.setup), 'replaying the same RNG must backtrack from the new selected inverse');
+    assert.equal(sliceCount(direct.setup), Math.max(5, item.slashes));
+    assert.ok(isCubeShape(applySquare1Alg(direct.state, direct.solution)));
+    // Split every original turn into a cancelling prefix plus itself. This is
+    // equivalent notation, so it must not bypass the direct-inverse rejection.
+    const split = inverse.replace(/\(/g, '(1,0) (-1,0) (');
+    const equivalent = createSquare1Drill({ ...options, alg: split, random: seededRandom(326) });
+    assert.equal(equivalent.setup, direct.setup);
+    const withOuterTurn = `(1,0) (-1,0) ${inverse} (3,0)`;
+    const rotated = createSquare1Drill({ ...options, alg: withOuterTurn, random: seededRandom(326) });
+    assert.notEqual(sliceCore(rotated.setup), sliceCore(first.setup));
+    assert.ok(isCubeShape(applySquare1Alg(rotated.state, rotated.solution)));
+  }
+});
+
+test('short disguised cube-shape routes keep all144 independent final top/bottom positions', () => {
+  const item = CASES_SQ1.find(item => item.slashes === 7), alg = item.algorithms[0].alg;
+  const options = { caseId: item.id, alg, scrambleStyle: 'disguised' };
+  let routeDraws = 0;
+  const reference = createSquare1Drill({ ...options, layerAlignment: 'reference', random: () => { routeDraws++; return .25; } });
+  const endings = new Set(); let blocked = false;
+  for (let a = 0; a < 12; a++) for (let b = 0; b < 12; b++) {
+    let draws = 0;
+    const drill = createSquare1Drill({ ...options, layerAlignment: 'random', random: () => ++draws <= routeDraws ? .25 : draws === routeDraws + 1 ? a / 12 : b / 12 });
+    assert.equal(drill.setup, reference.setup);
+    assert.equal(sliceCount(drill.scramble), 7);
+    assert.deepEqual(applySquare1Alg(drill.state, drill.alignment), reference.state);
+    assert.ok(isCubeShape(applySquare1Alg(drill.state, drill.solution)));
+    endings.add(`${drill.initialTop},${drill.initialBottom}`);
+    blocked ||= !isSliceableSquare1(drill.state);
+  }
+  assert.equal(endings.size, 144); assert.equal(blocked, true);
 });

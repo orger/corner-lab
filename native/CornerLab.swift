@@ -16,7 +16,7 @@ private enum AppIdentity {
     static let credits = "Letter-pair recall and blindfold memo practice.\nYour memos and practice history stay on this Mac."
 #else
     static let name = "Corner Lab"
-    static let version = "1.8.0"
+    static let version = "1.8.1"
     static let filePrefix = "corner-lab"
     static let windowKey = "CornerLabMainWindow"
     static let credits = "2×2 CLL/EG, 5×5 edges / centres, Square-1 cube shape / OBL / EP and Skewb NS2 practice.\nYour algorithms and practice history stay on this Mac."

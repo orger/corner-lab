@@ -251,14 +251,20 @@ check legal slices, known notation examples, inverse setups, and the solution
 for every case under varied layer alignments.
 
 
-Disguised Square-1 setups use a varied legal route through the shape graph,
-rather than displaying the inverse of the selected solving algorithm. The
-result matches the same ordered layer outlines; piece permutation and middle
-orientation may differ. A final independent top/bottom turn chooses among all
-12 angular positions per layer. The simulator checks that aligning the actual
-setup and applying the selected algorithm restores cube shape. Tests also
-check that blocked-slice orientations are represented without attempting an
-illegal slice in the setup.
+Disguised cube-shape setups use short legal routes through the shape graph,
+with at least five slice moves and excluding the direct inverse of the
+selected solving algorithm. The five-slice floor counts actual `/` moves;
+layer turns do not count. The result matches the same ordered layer outlines;
+piece permutation and middle orientation may differ. These selected routes
+are not a claim of globally optimal scrambling. A final independent top/bottom
+turn chooses among all 12 angular positions per layer. The simulator checks
+that aligning the actual setup and applying the selected algorithm restores
+cube shape. Tests also check that blocked-slice orientations are represented
+without attempting an illegal slice in the setup.
+
+A route may revisit an outline with a different piece arrangement. It rejects
+repeated physical piece arrangements up to layer turns, rather than extending
+the scramble with cancelling moves or a return to cube shape.
 
 ## Square-1 OBL and EP
 
@@ -289,14 +295,25 @@ diagrams are generated from the actual simulated state. Reference colours are
 white up, yellow down, green front, red right, blue back and orange left.
 
 OBL's goal is cube shape with each layer showing one face colour; permutation
-and equator orientation are outside that stage. Disguised OBL setups choose
-alternative source routes and align the colour pattern required by the
-preferred algorithm. They exclude the direct inverse and routes shorter than
-three slices. EP starts after orientation and corner permutation. Its disguised
-setup combines two different edge-only routes from a verified lookup of 576
-permutations, matching the full preferred reference state including the
-equator. The complete EP reveal finishes the puzzle rather than leaving a
-middle-layer correction implicit.
+and equator orientation are outside that stage. Disguised OBL setups select
+short alternatives from source setups and algorithm routes that match the
+colour pattern required by the preferred algorithm. For very short OBL cases,
+a short nonidentity edge permutation can precede the route: it moves pieces
+without changing the solved layer colours, meeting the floor without cancelling
+padding. EP starts after orientation and corner permutation. Its disguised
+setups consider verified algorithms in both directions and short combinations
+of edge-only routes, matching the full preferred reference state including the equator.
+The complete EP reveal finishes the puzzle rather than leaving a middle-layer
+correction implicit.
+
+Both stages keep a **five-slice minimum after move cancellation**, exclude the
+direct inverse of the selected algorithm, and favour short available routes.
+EP no longer favours the earlier long setup range. The five-slice floor can
+lengthen a previously shorter OBL setup. The search is
+bounded to its available routes and combinations, so it does not guarantee a
+globally shortest solution. The five-slice minimum applies only to disguised
+setups; the direct inverse option keeps its ordinary length. Existing settings,
+algorithm identifiers, and recorded scrambles and times remain unchanged.
 
 Both stages optionally add independent final quarter turns from `0`, `3`, `6`
 and `-3` on each layer; these are distinct from the twelve-position random

@@ -20,6 +20,26 @@ const pieces = state => {
   }
 };
 const parity = p => p.reduce((sum, value, i) => sum + p.slice(i + 1).filter(v => v < value).length, 0) % 2;
+const route = alg => {
+  const normalized = normalizeSquare1Algorithm(alg);
+  return normalized.slice(normalized.indexOf('/'), normalized.lastIndexOf('/') + 1);
+};
+function assertShortDisguise(drill, preferred, maxSlices) {
+  const normalized = normalizeSquare1Algorithm(drill.scramble), moves = parseSquare1Alg(normalized);
+  const slices = moves.filter(move => move.type === 'slice').length;
+  assert(slices >= 5 && slices <= maxSlices, `${drill.caseId}: ${slices} real slices`);
+  assert.notEqual(route(normalized), route(inverseSquare1(preferred)), 'initial/final U/D changes alone cannot disguise an inverse');
+  let state = solvedSquare1(); const seen = new Set([JSON.stringify(state)]);
+  for (const [index, move] of moves.entries()) {
+    if (move.type === 'turn') {
+      assert(move.top || move.bottom, 'no zero turns inside the normalized route');
+      assert(!(move.top === 6 && move.bottom === 6 && moves[index - 1]?.type === 'slice' && moves[index + 1]?.type === 'slice'), 'whole-layer exchanges cannot pad the route');
+    } else assert.notEqual(moves[index + 1]?.type, 'slice', 'no cancelling slices');
+    state = applySquare1Alg(state, move.type === 'slice' ? '/' : `(${move.top},${move.bottom})`);
+    const key = JSON.stringify(state);
+    assert(!seen.has(key), 'no identity loop can pad the route'); seen.add(key);
+  }
+}
 
 test('OBL catalogue covers the complete orientation set, including all seven EO cases', () => {
   assert.equal(CASES_SQ1_OBL.length, 185);
@@ -112,9 +132,10 @@ test('disguised drills preserve the requested case and its exact preferred grip'
       const actual = normalizeSquare1Algorithm(drill.scramble), reverse = normalizeSquare1Algorithm(inverseSquare1(item.algorithms[0].alg));
       assert.notEqual(actual, reverse, 'never the straight inverse');
       assert(!actual.endsWith(' ' + reverse), 'never a random prefix followed by the preferred inverse');
+      assertShortDisguise(drill, item.algorithms[0].alg, item.set === 'OBL' ? 7 : 15);
       pieces(drill.state); setups.add(drill.scramble);
     }
-    assert(setups.size >= 4, item.id + ' offers varied alternate routes');
+    assert(setups.size >= 2, item.id + ' offers multiple genuinely different short routes');
   }
 });
 
@@ -123,6 +144,7 @@ test('all preferred alternatives and changed grips work with disguised setups', 
     for (const item of cases) for (const algorithm of item.algorithms) {
       const drill = create({ caseId: item.id, alg: algorithm.alg, random: seeded(831) });
       assert(goal(applySquare1Alg(drill.state, drill.solution)), algorithm.id);
+      assertShortDisguise(drill, algorithm.alg, item.set === 'OBL' ? 7 : 15);
     }
     for (const item of [cases[0], cases[24], cases.at(-1)]) {
       // An unconventional 30-degree starting grip is valid custom notation;
@@ -132,6 +154,7 @@ test('all preferred alternatives and changed grips work with disguised setups', 
       const expected = applySquare1Alg(solvedSquare1(), inverseSquare1(alg));
       assert.equal(colours(drill.state), colours(expected));
       assert(goal(applySquare1Alg(drill.state, drill.solution)));
+      assertShortDisguise(drill, alg, item.set === 'OBL' ? 7 : 15);
       const plain = create({ caseId: item.id, alg: item.algorithms[0].alg, random: seeded(21) });
       const redundant = create({ caseId: item.id, alg: '(1,0) (-1,0) ' + item.algorithms[0].alg, random: seeded(21) });
       assert.equal(plain.scramble, redundant.scramble, 'disguise depends on the case, not move text');

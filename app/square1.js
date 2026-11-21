@@ -101,7 +101,8 @@ export function generateSquare1Shapes() {
   return queue;
 }
 const ALL_ROTATIONS = [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6];
-const DISGUISED_SLASHES = 14;
+const MIN_DISGUISED_SLASHES = 5;
+const MAX_DISGUISED_SLASHES = 8;
 const pick = (items, random) => items[Math.min(items.length - 1, Math.max(0, Math.floor(random() * items.length)))];
 const boundaries = layer => layer.map((piece, index) => piece === layer[mod(index - 1)] ? '0' : '1').join('');
 
@@ -118,13 +119,13 @@ function legalTransitions(state) {
 let disguiseGraph;
 const disguiseReachability = new Map();
 function reachableIn(target) {
-  // Build only on first use of disguised setups, keeping ordinary app startup
-  // light. Exact-length reachability avoids retries and dead ends in the walk.
+  // Build only on first use of disguised setups. Exact-length reachability is
+  // a pruning bound for the short-route search; actual moves are checked below.
   if (!disguiseGraph) disguiseGraph = new Map(generateSquare1Shapes().map(node =>
-    [node.key, new Set(legalTransitions(node.state).map(next => next.key))]));
+    [node.key, new Set(legalTransitions(node.state).map(next => next.key).filter(key => key !== node.key))]));
   if (!disguiseReachability.has(target)) {
     const reachable = [new Set([target])];
-    for (let depth = 1; depth <= DISGUISED_SLASHES; depth++) {
+    for (let depth = 1; depth <= MAX_DISGUISED_SLASHES; depth++) {
       const previous = reachable.at(-1);
       reachable.push(new Set([...disguiseGraph].filter(([, neighbours]) =>
         [...neighbours].some(key => previous.has(key))).map(([key]) => key)));
@@ -144,35 +145,110 @@ function appendLayerTurn(algorithm, top, bottom) {
   return formatSquare1Alg(moves);
 }
 
-function disguisedSetup(reference, random) {
-  const target = square1ShapeKey(reference), reachable = reachableIn(target);
-  const finishCache = new Map();
-  const canFinish = (state, remaining) => {
-    if (!remaining) return square1ShapeKey(state) === target;
-    const memoKey = `${remaining}:${boundaries(state.top)}:${boundaries(state.bottom)}`;
-    if (finishCache.has(memoKey)) return finishCache.get(memoKey);
-    const candidates = legalTransitions(state).filter(next =>
-      (next.top || next.bottom) && reachable[remaining - 1].has(next.key));
-    const possible = candidates.some(next => canFinish(next.state, remaining - 1));
-    finishCache.set(memoKey, possible);
-    return possible;
-  };
-  let state = solvedSquare1(), previousKey = null;
+/** Ignore initial/final layer alignment when comparing a route with an inverse.
+ * Combining adjacent turns also makes equivalent preferred move spellings give
+ * the same exclusion. Remove immediate inverse slice pairs after zero turns.
+ */
+function routeCore(algorithm) {
   const moves = [];
-  for (let index = 0; index < DISGUISED_SLASHES; index++) {
-    const currentKey = square1ShapeKey(state), remaining = DISGUISED_SLASHES - index - 1;
-    const candidates = legalTransitions(state).filter(next => reachable[remaining].has(next.key));
-    // Avoid immediate slice cancellations; memoized oriented-boundary checks
-    // ensure a chosen move still has a completion without adjacent / /.
-    const nonCancelling = index ? candidates.filter(next => next.top || next.bottom) : candidates;
-    const forward = nonCancelling.filter(next => next.key !== currentKey && next.key !== previousKey);
-    const preferred = forward.length ? forward : nonCancelling;
-    const offset = Math.min(preferred.length - 1, Math.max(0, Math.floor(random() * preferred.length)));
-    const ordered = [...preferred.slice(offset), ...preferred.slice(0, offset), ...nonCancelling.filter(next => !preferred.includes(next))];
-    const next = ordered.find(candidate => canFinish(candidate.state, remaining));
-    if (!next) throw new Error('Could not construct a legal disguised Square-1 setup.');
-    moves.push(next.move); previousKey = currentKey; state = next.state;
+  for (const move of parseSquare1Alg(algorithm)) {
+    const last = moves.at(-1);
+    if (move.type === 'turn') {
+      const combined = last?.type === 'turn' ? (moves.pop(), turn(last.top + move.top, last.bottom + move.bottom)) : move;
+      if (combined.top || combined.bottom) moves.push(combined);
+    } else if (last?.type === 'slice') moves.pop();
+    else moves.push(move);
   }
+  if (moves[0]?.type === 'turn') moves.shift();
+  if (moves.at(-1)?.type === 'turn') moves.pop();
+  return formatSquare1Alg(moves);
+}
+
+function orderedChoices(items, random) {
+  if (!items.length) return [];
+  const offset = Math.min(items.length - 1, Math.max(0, Math.floor(random() * items.length)));
+  return [...items.slice(offset), ...items.slice(0, offset)];
+}
+
+// A repeated geometric shape can carry a different piece permutation and is
+// useful disguise. Repeating the same pieces up to layer turns or a whole-puzzle
+// top/bottom flip is redundant, including a change to the untrained equator.
+const pieceCycle = layer => layer.map((_, index) => [...layer.slice(index), ...layer.slice(0, index)].join(',')).sort()[0];
+const pieceStateKey = state => [pieceCycle(state.top), pieceCycle(state.bottom)].sort().join('|');
+
+function disguisedSetup(reference, inverseSetup, random) {
+  const target = square1ShapeKey(reference), start = solvedSquare1(), startKey = square1ShapeKey(start);
+  const reachable = reachableIn(target), excluded = routeCore(inverseSetup);
+  // Choose moves only after finding a shape path. Rotational symmetry gives
+  // many moves per shape edge; keeping them out of the graph search prevents
+  // an infeasible short depth from exploring the same shape path repeatedly.
+  const realize = path => {
+    const visited = new Set([pieceStateKey(start)]);
+    const finishCache = new Map();
+    const candidatesFor = (state, index) => legalTransitions(state).filter(next => next.key === path[index] &&
+      (!index || ((next.top || next.bottom) && !(next.top === 6 && next.bottom === 6))));
+    // Reachability of this exact shape path depends only on oriented piece
+    // boundaries. A dead end must not be retried for every colour permutation.
+    const canFinish = (state, index) => {
+      if (index === path.length) return true;
+      const key = `${index}:${boundaries(state.top)}:${boundaries(state.bottom)}`;
+      if (finishCache.has(key)) return finishCache.get(key);
+      const possible = candidatesFor(state, index).some(next => canFinish(next.state, index + 1));
+      finishCache.set(key, possible);
+      return possible;
+    };
+    if (!canFinish(start, 0)) return null;
+    let attempts = 0;
+    function visit(state, index, moves) {
+      // Identity exclusions depend on the path's physical states, so they are
+      // not memoized with the geometry check above. Bound rare exhaustive
+      // branches and try a different short route instead of blocking the UI.
+      if (++attempts > 64) return null;
+      if (index === path.length) {
+        const algorithm = moves.join(' ');
+        return routeCore(algorithm) === excluded ? null : { state, algorithm };
+      }
+      const candidates = candidatesFor(state, index).filter(next => canFinish(next.state, index + 1));
+      // / / cancels; / (6,6) / only swaps the layers as a whole-puzzle regrip.
+      // Neither is counted towards the five useful slices of a disguised route.
+      for (const next of orderedChoices(candidates, random)) {
+        if (attempts >= 64) break;
+        const key = pieceStateKey(next.state);
+        if (visited.has(key)) continue;
+        visited.add(key);
+        const result = visit(next.state, index + 1, [...moves, next.move]);
+        visited.delete(key);
+        if (result) return result;
+      }
+      return null;
+    }
+    return visit(start, 0, []);
+  };
+  let result;
+  for (let depth = MIN_DISGUISED_SLASHES; depth <= MAX_DISGUISED_SLASHES && !result; depth++) {
+    if (!reachable[depth].has(startKey)) continue;
+    const visits = new Map([[startKey, 1]]);
+    function findPath(key, remaining, path) {
+      if (!remaining) return key === target ? realize(path) : null;
+      const choices = [...disguiseGraph.get(key)].filter(next => next !== startKey && reachable[remaining - 1].has(next));
+      // Prefer new shapes, but do not prohibit repeats: every route out of cube
+      // shape passes through Kite/Kite, including routes targeting Kite/Kite.
+      const ordered = [...orderedChoices(choices.filter(next => !visits.has(next)), random),
+        ...orderedChoices(choices.filter(next => visits.has(next)), random)];
+      for (const next of ordered) {
+        visits.set(next, (visits.get(next) || 0) + 1);
+        const found = findPath(next, remaining - 1, [...path, next]);
+        if (visits.get(next) === 1) visits.delete(next); else visits.set(next, visits.get(next) - 1);
+        if (found) return found;
+      }
+      return null;
+    }
+    result = findPath(startKey, depth, []);
+  }
+  if (!result) throw new Error('Could not construct a short disguised Square-1 setup.');
+  // No intermediate cube shape or repeated piece state: the minimum length
+  // comes from a genuine route, not a premix followed by the inverse or padding.
+  const { state, algorithm } = result;
   // A shape solver need not restore colours/permutation. Match only the piece
   // boundaries so the preferred case algorithm still applies in its normal grip.
   const align = (actual, desired) => {
@@ -181,7 +257,7 @@ function disguisedSetup(reference, random) {
     if (amount === undefined) throw new Error('Disguised setup did not reach the selected Square-1 shape.');
     return amount;
   };
-  return appendLayerTurn(moves.join(' '), align(state.top, reference.top), align(state.bottom, reference.bottom));
+  return appendLayerTurn(algorithm, align(state.top, reference.top), align(state.bottom, reference.bottom));
 }
 
 export function createSquare1Drill({ caseId = '', alg = '', orientation = '', scrambleStyle = 'provided',
@@ -192,7 +268,7 @@ export function createSquare1Drill({ caseId = '', alg = '', orientation = '', sc
   const inverseSetup = inverseSquare1(alg), reference = applySquare1Alg(solvedSquare1(), inverseSetup);
   if (isCubeShape(reference)) throw new Error('Choose an unsolved cube-shape case.');
   if (!isCubeShape(applySquare1Alg(reference, alg))) throw new Error('This algorithm does not restore cube shape.');
-  const setup = scrambleStyle === 'disguised' ? disguisedSetup(reference, random) : inverseSetup;
+  const setup = scrambleStyle === 'disguised' ? disguisedSetup(reference, inverseSetup, random) : inverseSetup;
   const a = layerAlignment === 'random' ? pick(ALL_ROTATIONS, random) : 0;
   const b = layerAlignment === 'random' ? pick(ALL_ROTATIONS, random) : 0;
   const alignment = layerAlignment === 'random' ? `(${a},${b})` : '';

@@ -12,9 +12,10 @@ On the iPhone, reconnect and reopen Corner Lab; when **Update ready** appears,
 choose **Update** while no timer is running. The update keeps the device's data.
 For the Mac version, close Corner Lab and reopen the newly built app bundle.
 
-Version 1.8.0 adds Square-1 OBL, Square-1 EP and Skewb NS2 to the same trainer
-menu on both platforms. After installing that release, older histories remain
-available and each new trainer starts with an empty history. The three
+Version 1.8.1 uses short alternative scrambles, with at least five slices, in
+all three Square-1 trainers. All seven trainers remain available on both
+platforms, with existing histories and settings preserved. Backups from before
+OBL, EP and Skewb NS2 were added gain empty histories for those trainers. The
 Square-1 stages keep separate statistics; Skewb includes NS2 only. Check the
 in-app reference grip and notation before starting either puzzle.
 
