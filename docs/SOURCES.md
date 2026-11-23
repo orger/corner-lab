@@ -266,6 +266,17 @@ A route may revisit an outline with a different piece arrangement. It rejects
 repeated physical piece arrangements up to layer turns, rather than extending
 the scramble with cancelling moves or a return to cube shape.
 
+The cube-shape solution reveal also includes all 64 rows of the user's supplied
+shape routes and alignment comments, covering the 169 existing cases. These
+notes are mapped by geometric layer signatures, slice counts and intermediate
+shape transitions, including simultaneous reflection and layer exchange. Every
+listed slice count matches the catalogue minimum; every listed shape route is
+checked as a legal sequence of one-slice transitions. The Millennium Falcon
+name (all eight edges adjacent) is additionally cross-checked against
+[FreshCuber's cube-shape tutorial](https://freshcuber.wordpress.com/2024/05/25/square1-intermediate/).
+The notes are personal recognition cues, separate from the generated numeric
+solution. Case IDs, algorithms and historical records are unchanged.
+
 ## Square-1 OBL and EP
 
 The OBL catalogue includes **185 cases and 641 verified algorithm choices**

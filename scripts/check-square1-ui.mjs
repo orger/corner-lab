@@ -27,6 +27,7 @@ try {
   await page.locator('[data-lte-setting="strategy"]').selectOption('learning');
   await page.locator('.builder [data-action="lte-next"]').click();
   assert((await page.locator('.condition-strip').innerText()).includes('Learning batch'));
+  assert.equal(await page.locator('.sq1-case-notes').count(), 0, 'personal notes are hidden before reveal');
   const scrambleText = await page.locator('.scramble.lte-scramble').innerText();
   assert.match(scrambleText, /\/\s*\(-?\d+,-?\d+\)$/);
   assert(scrambleText.split('/').length - 1 >= 5, 'disguised setup has at least five slices');
@@ -34,7 +35,14 @@ try {
   await page.locator('[data-action="lte-manual"]').click();
   assert(await page.locator('.scramble-completed').count());
   await page.waitForFunction(async () => (await (await import('./storage.js')).loadData()).sq1.attempts.length === 1);
+  const completed = (await stored()).sq1.attempts[0];
+  const completedNotes = await page.evaluate(async caseId => (await import('./square1-case-notes.js')).getSquare1CaseNotes(caseId), completed.caseId);
+  assert(completedNotes, 'the completed case maps to the supplied notes table');
+  assert.equal(await page.locator('.sq1-case-notes').getAttribute('data-sq1-notes-case'), completed.caseId);
+  assert((await page.locator('.sq1-case-notes').innerText()).includes(completedNotes.route));
+  if (completedNotes.tip) assert((await page.locator('.sq1-case-notes').innerText()).includes(completedNotes.tip));
   await page.locator('#lte-timer-display').click();
+  assert.equal(await page.locator('.sq1-case-notes').count(), 0, 'next case hides previous notes');
   await page.locator('[data-action="lte-timing"][data-mode="inspection"]').click();
   await page.locator('#lte-timer-display').click();
   assert(await page.locator('.timer-zone.inspecting').count());
@@ -43,6 +51,7 @@ try {
   await page.locator('#lte-timer-display').click();
   assert(await page.locator('.timer-zone.running').count());
   assert.equal(await page.locator('.sq1-preview').count(), 0);
+  assert.equal(await page.locator('.sq1-case-notes').count(), 0);
   await page.waitForTimeout(130);
   await page.locator('#lte-timer-display').click();
   await page.waitForFunction(async () => (await (await import('./storage.js')).loadData()).sq1.attempts.length === 2);
@@ -83,6 +92,26 @@ try {
     if (width === 390) await page.screenshot({ path: '.build/square1-phone-case.png', fullPage: false });
     await page.locator('.modal [data-action="close-modal"]').last().click();
   }
+  // Inspect the longest supplied route/tip on both phone widths, independently
+  // of the random cases above. Revealing it must not add a recorded solve.
+  const longestNotesCase = await page.evaluate(async () => {
+    const { CASES_SQ1 } = await import('./catalog-square1.js');
+    const { getSquare1CaseNotes } = await import('./square1-case-notes.js');
+    return CASES_SQ1.map(item => ({ id: item.id, notes: getSquare1CaseNotes(item.id) }))
+      .filter(item => item.notes).sort((a, b) => (b.notes.route.length + b.notes.tip.length) - (a.notes.route.length + a.notes.tip.length))[0];
+  });
+  await navigate('library');
+  await page.locator(`[data-action="lte-detail"][data-id="${longestNotesCase.id}"]`).click();
+  await page.locator('.modal [data-action="lte-only-case"]').click();
+  await page.locator('[data-action="lte-reveal"]').click();
+  assert.equal(await page.locator('.sq1-case-notes').getAttribute('data-sq1-notes-case'), longestNotesCase.id);
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    await fits(`${width}px personal cube-shape notes`);
+    assert((await page.locator('.sq1-case-notes').innerText()).includes(longestNotesCase.notes.tip));
+    await page.locator('.solution').screenshot({ path: `.build/square1-notes-${width}.png` });
+  }
+  assert.equal((await stored()).sq1.attempts.length, 2);
   await navigate('settings');
   const pendingDownload = page.waitForEvent('download');
   await page.locator('[data-action="export"]').click();
@@ -104,8 +133,11 @@ try {
   assert.equal((await stored()).sq1.attempts.length, 2);
   await navigate('library');
   assert.equal(await page.locator('.lte-case').count(), 169);
+  await navigate('train');
+  await page.locator('[data-action="lte-reveal"]').click();
+  assert((await page.locator('.sq1-case-notes').innerText()).includes(longestNotesCase.notes.route), 'personal notes remain available offline');
   assert.deepEqual(errors, []);
-  console.log('PASS: Square-1 disguised setups, final layer turns, desktop, 390px and 320px phone layouts, both timers, diagrams, case selection, Learning, progress zoom, backup restore and offline restart.');
+  console.log('PASS: Square-1 disguised setups, final layer turns, personal reveal notes, desktop, 390px and 320px phone layouts, both timers, diagrams, case selection, Learning, progress zoom, backup restore and offline restart.');
 } finally {
   await browser.close();
 }

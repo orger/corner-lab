@@ -3,6 +3,12 @@
 .sq1-case-grid .lte-case-diagram svg{max-height:none;width:100%;max-width:300px;height:auto}
 .sq1-preview>svg,.sq1-reference>svg{display:block;width:100%;max-width:460px;height:auto;margin:12px auto}
 .sq1-preview>.help,.sq1-reference>.help{max-width:none;text-align:center}
+.sq1-case-notes{margin:18px 0;padding:16px 0;border-top:1px solid #dce4d6;border-bottom:1px solid #dce4d6;text-align:left}
+.sq1-case-notes .sq1-note-case{margin:5px 0 14px;font-size:12px;color:#60765f}
+.sq1-case-notes dl{display:grid;gap:13px;margin:0}
+.sq1-case-notes dt{font-size:11px;font-weight:700;color:#60765f;margin-bottom:4px}
+.sq1-case-notes dd{margin:0;line-height:1.6;overflow-wrap:anywhere}
+.sq1-case-notes .help{margin-top:13px;max-width:none}
 @media(max-width:600px){
   .sq1-case-grid .lte-case-diagram{min-height:140px}
   .sq1-preview>svg,.sq1-reference>svg{margin:8px auto}

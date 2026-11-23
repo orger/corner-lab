@@ -5,8 +5,9 @@ import { freshData, validateData } from '../app/storage.js';
 import { CASES_SQ1 } from '../app/catalog-square1.js';
 import { createSquare1Drill, solvedSquare1, applySquare1Alg, inverseSquare1, isCubeShape, parseSquare1Alg } from '../app/square1.js';
 import { square1SVG } from '../app/square1-view.js';
+import { getSquare1CaseNotes } from '../app/square1-case-notes.js';
 
-function controller(settings = {}) {
+function controller(settings = {}, options = {}) {
   const data = freshData();
   Object.assign(data.sq1.settings, { selectedCases: [CASES_SQ1[0].id] }, settings);
   const saves = [], toasts = [], dialogs = [], downloads = [], audio = [], nodes = new Map();
@@ -24,6 +25,7 @@ function controller(settings = {}) {
     window: { confirm: () => true }, now: () => time, random: () => .25,
     requestFrame: () => 1, cancelFrame() {},
     createAudio: () => ({ start: () => audio.push('start'), cancel: () => audio.push('cancel') }),
+    ...options,
   });
   trainer.next(false);
   return {
@@ -104,6 +106,52 @@ test('Square-1 random alignment reveals the complete solution and keeps timing d
   assert.match(ui.trainer.content('train'), /PREVIOUS SCRAMBLE · COMPLETED/);
   assert.deepEqual(otherTrainers(ui.data), before);
   assert.doesNotThrow(() => validateData(ui.saves.at(-1)));
+});
+
+test('cube-shape route and recognition notes appear after an attempt and stay with its case', async () => {
+  const item = CASES_SQ1.find(item => getSquare1CaseNotes(item.id)?.tip);
+  assert(item, 'the supplied table contains recognition notes');
+  const notes = getSquare1CaseNotes(item.id);
+  const ui = controller({ selectedCases: [item.id], timingMode: 'inspection' });
+  const current = ui.trainer.snapshot().current;
+  assert.doesNotMatch(ui.trainer.content('train'), /sq1-case-notes/);
+  await ui.click('lte-timer');
+  assert.doesNotMatch(ui.trainer.content('train'), /sq1-case-notes/);
+  ui.setTime(4000); await ui.click('lte-timer');
+  assert.doesNotMatch(ui.trainer.content('train'), /sq1-case-notes/);
+  ui.setTime(6250); await ui.click('lte-timer');
+  const html = ui.trainer.content('train');
+  assert.match(html, /aria-label="Your cube-shape notes"/);
+  assert.ok(html.includes(escaped(notes.label)));
+  assert.ok(html.includes(`<dd>${escaped(notes.route)}</dd>`));
+  assert.ok(html.includes(`<dd>${escaped(notes.tip)}</dd>`));
+  assert.ok(html.includes(`<span class="solution-label">Solve</span>${escaped(current.solution)}</p>`), 'personal route does not replace the chosen algorithm');
+  assert.match(html, /Your route may differ from the move sequence above/);
+  assert.equal(ui.data.sq1.attempts[0].assisted, false);
+  assert.equal(ui.data.sq1.attempts[0].inspectionSeconds, 4);
+  assert.equal(ui.data.sq1.attempts[0].solution, current.solution);
+  assert.doesNotThrow(() => validateData(ui.saves.at(-1)));
+  await ui.click('lte-reveal');
+  assert.doesNotMatch(ui.trainer.content('train'), /sq1-case-notes/);
+  await ui.click('lte-next');
+  assert.doesNotMatch(ui.trainer.content('train'), /sq1-case-notes/);
+});
+
+test('early cube-shape notes use the existing assisted reveal and disappear during solving', async () => {
+  const item = CASES_SQ1.find(item => getSquare1CaseNotes(item.id)?.tip);
+  const ui = controller({ selectedCases: [item.id] });
+  await ui.click('lte-reveal');
+  assert.match(ui.trainer.content('train'), /sq1-case-notes/);
+  await ui.click('lte-timer');
+  assert.doesNotMatch(ui.trainer.content('train'), /sq1-case-notes/);
+  ui.setTime(2000); await ui.click('lte-timer');
+  assert.match(ui.trainer.content('train'), /sq1-case-notes/);
+  assert.equal(ui.data.sq1.attempts[0].assisted, true);
+  // A different trainer kind must never show cube-shape notes, even if a
+  // supplied catalogue happens to use one of the same identifiers.
+  const other = controller({ selectedCases: [item.id] }, { kind: 'square1-obl' });
+  await other.click('lte-reveal');
+  assert.doesNotMatch(other.trainer.content('train'), /sq1-case-notes|Your shape route/);
 });
 
 test('Square-1 three-press timing records inspection separately and cancellation silences cues', async () => {

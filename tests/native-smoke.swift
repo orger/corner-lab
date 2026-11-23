@@ -104,10 +104,12 @@ struct NativeSmoke {
     trainer.value = 'square1'; trainer.dispatchEvent(new Event('change', { bubbles: true }));
     assert(document.querySelector('#lte-manual'), 'Square-1 native practice missing');
     assert(document.querySelector('.lte-preview svg'), 'Square-1 diagram missing');
+    assert(!document.querySelector('.sq1-case-notes'), 'Shape notes revealed the case before an attempt');
     document.querySelector('#lte-manual').value = '6.75';
     document.querySelector('[data-action="lte-manual"]').click();
     for (let i = 0; i < 80; i++) { saved = await window.cornerlabNative.load(); if (saved.sq1?.attempts.length === 1) break; await wait(50); }
     assert(saved.sq1.attempts[0].seconds === 6.75, 'Square-1 native result was not persisted');
+    assert(document.querySelector('.sq1-case-notes'), 'Personal shape notes missing from the native result reveal');
     assert(saved.sq1.attempts[0].scrambleStyle === 'disguised', 'Square-1 did not default to a disguised scramble');
     assert(saved.sq1.attempts[0].scramble.split('/').length - 1 >= 5, 'Square-1 disguised setup has fewer than five slices');
     assert(saved.sq1.attempts[0].layerAlignment === 'random', 'Square-1 random layer orientation was not saved');
@@ -194,7 +196,12 @@ struct NativeSmoke {
       }
       assert(document.querySelector('.lte-preview svg'), item.id + ' phone preview missing');
     }
-    window.scrollTo(0, 0);
+    chooseTrainer('square1');
+    document.querySelector('[data-action="lte-reveal"]').click();
+    const shapeNotes = document.querySelector('.sq1-case-notes');
+    assert(shapeNotes, 'Shape notes missing after native reload');
+    assert(document.documentElement.scrollWidth <= innerWidth + 1, 'Shape notes overflow the phone viewport');
+    shapeNotes.scrollIntoView({ block: 'center' });
     await wait(100);
     return { phase: 'after-reload', phoneWidth: innerWidth, square1Attempts: loaded.sq1.attempts.length, restoredAttempts: loaded.attempts.length, libraryCards, expandedLibraries };
     """# }

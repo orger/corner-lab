@@ -16,7 +16,7 @@ An offline trainer for Mac and iPhone covering 2×2 CLL, EG1, EG2, AUF recogniti
 
 Choose **Square‑1 · Cube shape** from the trainer menu for all 169 non-cube shape pairs, disguised or inverse setups, independently randomised final layer positions, case selection, timers, learning batches and separate statistics. See the [user guide](docs/USER-GUIDE.md#square-1-cube-shape).
 
-Version **1.8.1** uses short alternative setups across **Square‑1 · Cube shape**, **Square‑1 · OBL**, and **Square‑1 · EP**, with at least five slice moves and routes different from the direct inverse. The floor can lengthen previously shorter OBL setups. All seven trainers offer case subsets, preferred algorithm choices, timing, Learning batches, recent-speed and recall practice, filtered statistics and full-set progress charts. Their histories stay independent.
+Version **1.8.2** adds your shape routes and recognition notes to the **Square‑1 · Cube shape** solution reveal. The notes follow the corresponding case, including mirrored and swapped-layer variants, without replacing your chosen algorithm. All three Square‑1 trainers retain short disguised setups with at least five slices. All seven trainers offer case subsets, preferred algorithm choices, timing, Learning batches, recent-speed and recall practice, filtered statistics and full-set progress charts. Their histories stay independent.
 
 ## Run on iPhone
 
