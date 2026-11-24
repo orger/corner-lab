@@ -9,6 +9,7 @@ import { CASES_CENTRES } from '../app/catalog-centres.js';
 import { freshSQ1OBLData, validateSQ1OBLData, freshSQ1EPData, validateSQ1EPData,
   freshSkewbNS2Data, validateSkewbNS2Data } from '../app/lte-storage.js';
 import { freshData, validateData } from '../app/storage.js';
+import { createSkewbDrill } from '../app/skewb.js';
 
 const trainers = [
   { key: 'sq1obl', trainer: 'square1-obl', cases: CASES_SQ1_OBL, fresh: freshSQ1OBLData, validate: validateSQ1OBLData, alignment: true },
@@ -225,4 +226,46 @@ test('every supplied new case and algorithm choice can be retained in a backup',
       assert.deepEqual(trainer.validate(input), input, `${trainer.key}: ${item.id} / ${algorithm.id}`);
     }
   }
+});
+
+test('older Skewb backups keep their 131-case selection, preferred algorithms and history', () => {
+  const root = freshData();
+  root.initialized = true;
+  root.trainer = 'skewb-ns2';
+  const branch = root.skewbns2;
+  branch.settings.selectedCases = Array.from({ length: 131 }, (_, i) => `NS2-${String(i + 1).padStart(3, '0')}`);
+  const oldCases = ['NS2-001', 'NS2-131'].map(id => CASES_SKEWB_NS2.find(item => item.id === id));
+  branch.preferences = Object.fromEntries(oldCases.map(item => [item.id, item.algorithms.at(-1).id]));
+  branch.attempts = oldCases.map((item, index) => ({ ...attempt(item), id: `old-ns2-${index}`,
+    algorithm: `  ${item.algorithms[0].alg}  `, seconds: 6 + index }));
+  branch.presets = [{ id: 'old-ns2-selection', name: 'Original NS2 cases', settings: structuredClone(branch.settings) }];
+  const before = structuredClone(root);
+  assert.deepEqual(validateData(JSON.parse(JSON.stringify(root))), before);
+  assert.deepEqual(root, before);
+  assert.equal(freshSkewbNS2Data().settings.selectedCases.length, 134, 'new installations include all added cases');
+});
+
+test('the three added easy Skewb cases retain independent preferences, solves and saved practice', () => {
+  const root = freshData();
+  root.initialized = true;
+  root.trainer = 'skewb-ns2';
+  const branch = root.skewbns2;
+  branch.settings.selectedCases = ['NS2-132', 'NS2-133', 'NS2-134'];
+  branch.settings.strategy = 'learning';
+  const oldCase = CASES_SKEWB_NS2.find(item => item.id === 'NS2-001');
+  branch.attempts = [{ ...attempt(oldCase), id: 'existing-skewb-result' }];
+  for (const id of branch.settings.selectedCases) {
+    const item = CASES_SKEWB_NS2.find(item => item.id === id);
+    assert(item, `${id} must be selectable`);
+    const algorithm = item.algorithms.at(-1);
+    branch.preferences[id] = algorithm.id;
+    const drill = createSkewbDrill({ caseId: id, alg: algorithm.alg, scrambleStyle: 'disguised', random: () => .25 });
+    branch.attempts.push({ ...attempt(item), id: `easy-${id}`, algorithmId: algorithm.id, algorithm: algorithm.alg,
+      scrambleStyle: 'disguised', scramble: drill.scramble, solution: drill.solution });
+  }
+  branch.presets = [{ id: 'easy-ns2', name: 'Pure Pi and one-hammer finishes', settings: structuredClone(branch.settings) }];
+  const restored = validateData(JSON.parse(JSON.stringify(root)));
+  assert.deepEqual(restored, root);
+  assert.deepEqual(restored.skewbns2.attempts.map(record => record.caseId), ['NS2-001', 'NS2-132', 'NS2-133', 'NS2-134']);
+  assert.deepEqual(restored.skewbns2.presets[0].settings.selectedCases, ['NS2-132', 'NS2-133', 'NS2-134']);
 });

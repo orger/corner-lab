@@ -16,7 +16,7 @@ const base = process.env.CORNER_LAB_TEST_URL || 'http://127.0.0.1:8768/';
 const trainers = [
   { id: 'square1-obl', branch: 'sq1obl', count: 185 },
   { id: 'square1-ep', branch: 'sq1ep', count: 99 },
-  { id: 'skewb-ns2', branch: 'skewbns2', count: 131 },
+  { id: 'skewb-ns2', branch: 'skewbns2', count: 134 },
 ];
 const ready = () => page.waitForSelector('#trainer-select');
 const stored = () => page.evaluate(async () => (await import('./storage.js')).loadData());
@@ -37,16 +37,25 @@ try {
     else assert.equal(await page.locator('[data-lte-setting="layerAlignment"]').count(), 0);
     assert.equal((await stored())[trainer.branch].attempts.length, 0);
 
-    // Select a real alternate algorithm and a two-case subset, then train a full Learning batch.
+    // Select a real alternate algorithm and a full Learning batch. Skewb also
+    // exercises each easy case added after the original 131-case catalogue.
     const selected = await page.evaluate(async id => {
       const { ADDITIONAL_TRAINERS } = await import('./additional-trainers.js');
       const cases = ADDITIONAL_TRAINERS.find(item => item.id === id).cases;
       const first = cases.find(item => item.algorithms.length > 1);
       if (!first) throw new Error('No algorithm alternatives for ' + id);
-      return [first.id, cases.find(item => item.id !== first.id).id];
+      return id === 'skewb-ns2' ? [first.id, 'NS2-132', 'NS2-133', 'NS2-134']
+        : [first.id, cases.find(item => item.id !== first.id).id];
     }, trainer.id);
     await navigate('library');
     assert.equal(await page.locator('.lte-case').count(), trainer.count);
+    if (trainer.id === 'skewb-ns2') {
+      await page.locator('#lte-library-group').selectOption('Pn + HZ Pure');
+      assert.equal(await page.locator('[data-lte-case="NS2-132"]').count(), 1, 'Pure Pi belongs in the Pure HZ group');
+      await page.locator('#lte-library-group').selectOption('Pi + 3S');
+      for (const id of ['NS2-133', 'NS2-134']) assert.equal(await page.locator(`[data-lte-case="${id}"]`).count(), 1, 'single-hammer cases belong in Pi + 3S');
+      await page.locator('#lte-library-group').selectOption('all');
+    }
     await page.locator('[data-action="lte-select"][data-value="none"]').click();
     for (const id of selected) await page.locator(`[data-lte-case="${id}"]`).check();
     await page.locator(`[data-action="lte-detail"][data-id="${selected[0]}"]`).click();
@@ -74,10 +83,17 @@ try {
     await page.waitForTimeout(130);
     await page.locator('#lte-timer-display').click();
     await page.waitForFunction(async branch => (await (await import('./storage.js')).loadData())[branch].attempts.length === 2, trainer.branch);
+    for (let completed = 2; completed < selected.length; completed++) {
+      await page.locator('#lte-timer-display').click();
+      await page.locator('#lte-manual').fill(String(3.5 + completed));
+      await page.locator('[data-action="lte-manual"]').click();
+      await page.waitForFunction(async ({ branch, count }) => (await (await import('./storage.js')).loadData())[branch].attempts.length === count,
+        { branch: trainer.branch, count: completed + 1 });
+    }
     const data = (await stored())[trainer.branch];
     assert.equal(data.preferences[selected[0]], algorithmId);
     assert.deepEqual([...data.settings.selectedCases].sort(), [...selected].sort());
-    assert.deepEqual(data.attempts.map(item => item.caseId).sort(), [...selected].sort(), 'Learning must include both selected cases once');
+    assert.deepEqual(data.attempts.map(item => item.caseId).sort(), [...selected].sort(), 'Learning must include every selected case once');
     assert(data.attempts[1].inspectionSeconds > 0);
     assert(data.attempts.every(item => item.scrambleStyle === 'disguised'));
     if (trainer.branch.startsWith('sq1')) for (const record of data.attempts) {
@@ -90,7 +106,7 @@ try {
     assert.equal(await page.locator('[data-progress="set"]').inputValue(), trainer.id);
     assert(await page.locator('.progress-plot svg').count());
     assert((await page.locator('.inspection-stats').innerText()).toLowerCase().includes('under 12 seconds'));
-    assert((await page.locator('.progress-coverage-value').innerText()).includes(`2 / ${trainer.count}`));
+    assert((await page.locator('.progress-coverage-value').innerText()).includes(`${selected.length} / ${trainer.count}`));
     await page.locator('[data-progress="range-start"]').press('End');
     const dateBefore = await page.locator('[data-progress="range-start"]').getAttribute('aria-valuetext');
     await page.locator('[data-progress="clean"]').check();
@@ -112,6 +128,13 @@ try {
       await fits(`${trainer.id} ${width}px algorithm details`);
       if (width === 390) await capture(`${trainer.id}-${width}-algorithm`);
       await page.locator('.modal [data-action="close-modal"]').last().click();
+      if (trainer.id === 'skewb-ns2') for (const id of ['NS2-132', 'NS2-133', 'NS2-134']) {
+        await page.locator(`[data-action="lte-detail"][data-id="${id}"]`).click();
+        assert(await page.locator('.modal svg').count(), id + ' reference diagram missing');
+        await fits(`${id} ${width}px reference and solution`);
+        if (width === 390) await capture(`new-${id.toLowerCase()}-${width}`);
+        await page.locator('.modal [data-action="close-modal"]').last().click();
+      }
     }
     console.log(`PASS: ${trainer.id}, ${trainer.count} cases, preferred algorithm, Learning batch, timers, statistics and phone layouts`);
   }

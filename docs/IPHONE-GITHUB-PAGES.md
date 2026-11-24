@@ -12,8 +12,8 @@ On the iPhone, reconnect and reopen Corner Lab; when **Update ready** appears,
 choose **Update** while no timer is running. The update keeps the device's data.
 For the Mac version, close Corner Lab and reopen the newly built app bundle.
 
-Version 1.8.2 adds your cube-shape routes and recognition notes to the
-Square-1 solution reveal. All seven trainers remain available on both
+Version 1.8.3 adds Pure Pi and the two single-sledge/hedge cases to Skewb NS2,
+bringing its catalogue to 134 cases. All seven trainers remain available on both
 platforms, with existing histories and settings preserved. Backups from before
 OBL, EP and Skewb NS2 were added gain empty histories for those trainers. The
 Square-1 stages keep separate statistics; Skewb includes NS2 only. Check the

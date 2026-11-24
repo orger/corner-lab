@@ -1,0 +1,59 @@
+{
+  "source": "Sarah Strong’s Skewb guide · supplemental NS2 basics requested by the user",
+  "sourceUrl": "https://sarah.cubing.net/skewb/advanced-variation-by-case.pdf",
+  "guideUrl": "https://sarah.cubing.net/skewb/skewb-guide.pdf",
+  "notes": "The upstream drill omits the short S, H and SS cases. The completed side stays on D. Solutions use explicit NS notation with Sarah-style S=R' F R F' and H=F R' F' R. The reference is generated from a physically rotated solved Skewb, then reached from the standard scramble grip using WCA moves. No upstream IDs are reused.",
+  "cases": [
+    {
+      "id": "NS2-132",
+      "name": "Pure Pi",
+      "group": "Pn + HZ Pure",
+      "recognition": "Pi corners with all centres already in their solved relative positions.",
+      "sourcePage": 1,
+      "algorithms": [
+        {
+          "id": "NS2-132-ss",
+          "alg": "R' F R F' R' F R F'",
+          "label": "Pure Pi · two sledges",
+          "originalAlg": "S S"
+        },
+        {
+          "id": "NS2-132-hh",
+          "alg": "y2 F R' F' R F R' F' R",
+          "label": "Pure Pi · turn, then two hedges",
+          "originalAlg": "y2 H H"
+        }
+      ]
+    },
+    {
+      "id": "NS2-133",
+      "name": "Pi + 3S · side U · sledge",
+      "group": "Pi + 3S",
+      "recognition": "Pi + 3S with the opposite-to-bottom centre on the side; solved by one sledge.",
+      "sourcePage": 5,
+      "algorithms": [
+        {
+          "id": "NS2-133-sledge",
+          "alg": "R' F R F'",
+          "label": "Single sledge",
+          "originalAlg": "S"
+        }
+      ]
+    },
+    {
+      "id": "NS2-134",
+      "name": "Pi + 3S · side U · hedge",
+      "group": "Pi + 3S",
+      "recognition": "Pi + 3S with the opposite-to-bottom centre on the side; solved by one hedge.",
+      "sourcePage": 5,
+      "algorithms": [
+        {
+          "id": "NS2-134-hedge",
+          "alg": "F R' F' R",
+          "label": "Single hedge",
+          "originalAlg": "H"
+        }
+      ]
+    }
+  ]
+}

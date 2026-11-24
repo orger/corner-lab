@@ -77,7 +77,7 @@ struct NativeSmoke {
     const expandedTrainers = [
       { id: 'square1-obl', branch: 'sq1obl', count: 185, seconds: 8.25 },
       { id: 'square1-ep', branch: 'sq1ep', count: 99, seconds: 10.5 },
-      { id: 'skewb-ns2', branch: 'skewbns2', count: 131, seconds: 7.1 }
+      { id: 'skewb-ns2', branch: 'skewbns2', count: 134, seconds: 7.1, caseId: 'NS2-132' }
     ];
     const chooseTrainer = id => {
       const select = document.querySelector('#trainer-select');
@@ -118,6 +118,14 @@ struct NativeSmoke {
     const expandedAttemptIDs = {};
     for (const item of expandedTrainers) {
       chooseTrainer(item.id);
+      if (item.caseId) {
+        document.querySelector('[data-action="nav"][data-page="library"]').click();
+        document.querySelector('[data-action="lte-select"][data-value="none"]').click();
+        const checkbox = document.querySelector('[data-lte-case="' + item.caseId + '"]');
+        assert(checkbox, 'Added Skewb case missing from library');
+        checkbox.checked = true; checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+        document.querySelector('[data-action="lte-start"]').click();
+      }
       assert(document.querySelector('#lte-manual'), item.id + ' native practice missing');
       assert(document.querySelector('.lte-preview svg'), item.id + ' diagram missing');
       assert(document.querySelector('[data-lte-setting="scrambleStyle"]')?.value === 'disguised', item.id + ' default setup style incorrect');
@@ -126,6 +134,7 @@ struct NativeSmoke {
       for (let i = 0; i < 80; i++) { saved = await window.cornerlabNative.load(); if (saved[item.branch]?.attempts.length === 1) break; await wait(50); }
       const record = saved[item.branch]?.attempts[0];
       assert(record?.seconds === item.seconds, item.id + ' manual result was not persisted');
+      if (item.caseId) assert(record.caseId === item.caseId, 'Added Skewb case did not save its own result');
       assert(record.scrambleStyle === 'disguised', item.id + ' setup metadata missing');
       if (item.branch.startsWith('sq1')) {
         assert(record.scramble.split('/').length - 1 >= 5, item.id + ' disguised setup has fewer than five slices');
@@ -152,6 +161,7 @@ struct NativeSmoke {
     for (const item of expandedTrainers) {
       const records = loaded[item.branch]?.attempts;
       assert(records?.length === 1 && records[0].seconds === item.seconds && records[0].id === expectedExpandedIDs[item.branch], item.id + ' history changed after reload');
+      if (item.caseId) assert(records[0].caseId === item.caseId, 'Added Skewb case changed after reload');
     }
     document.querySelector('[data-action="nav"][data-page="settings"]').click();
     assert(document.body.innerText.includes('1 2×2 results'), 'App did not restore persisted history');
@@ -188,6 +198,9 @@ struct NativeSmoke {
         if (tab === 'library') {
           expandedLibraries[item.branch] = document.querySelectorAll('.lte-case').length;
           assert(expandedLibraries[item.branch] === item.count, item.id + ' library coverage mismatch');
+          if (item.id === 'skewb-ns2') for (const id of ['NS2-132', 'NS2-133', 'NS2-134']) {
+            assert(document.querySelector('[data-lte-case="' + id + '"]'), 'Added Skewb case missing after reload: ' + id);
+          }
         }
         if (tab === 'insights') {
           assert(document.querySelector('[data-progress="set"]')?.value === item.id, item.id + ' progress not selected');

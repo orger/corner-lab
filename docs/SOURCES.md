@@ -337,20 +337,39 @@ all legal puzzle states.
 
 ## Skewb NS2
 
-The Skewb catalogue uses only the **131 NS2 cases in 20 groups** from Malte
-Ihlefeld's [Skewb NS2 trainer](https://mihlefeld.github.io/Alg-Trainers/Skewb-NS2-Trainer/index.html?select).
-Its separate EG2 collection is excluded. The source is Alg-Trainers commit
+The Skewb catalogue contains **134 NS2 cases in 20 groups**: the **131 cases**
+from Malte Ihlefeld's [Skewb NS2 trainer](https://mihlefeld.github.io/Alg-Trainers/Skewb-NS2-Trainer/index.html?select),
+plus the three easy cases requested by the user. The source's separate EG2
+collection is excluded. The source is Alg-Trainers commit
 `3d19a613932319e33219105ad5bfd1f7a128ff24`, files
 `Skewb-NS2-Trainer/algs_info.json` and `scrambles.json`, under GPL-3.0.
 The NS2-only snapshot is retained in `scripts/skewb-ns2-source.json`.
 
 `scripts/build-skewb-catalog.mjs` produces the runtime catalogue and
-`scripts/skewb-catalog-report.json`. It retains **495 verified alternatives**;
+`scripts/skewb-catalog-report.json`. It retains **495 verified source alternatives**;
 **81 source alternatives** are omitted because they did not pass exact-state
 verification under the supported source notation interpretations. The report
 records those decisions. All cases retain a completed bottom side after setup,
 and every accepted alternative solves its case completely, allowing a final
 whole-puzzle rotation. No source SVG images or trainer code are used.
+
+The three additions are **Pure Pi** (two sledges, with an alternative hedge
+solution), and the two **Pi + 3S** cases solved by one sledge or one hedge.
+These easy cases appear in Sarah Strong's [Skewb guide, page 7](https://sarah.cubing.net/skewb/skewb-guide.pdf)
+and [case collection, pages 1 and 5](https://sarah.cubing.net/skewb/advanced-variation-by-case.pdf).
+Pure Pi belongs to the existing **Pn + HZ Pure** group; the single-hammer cases
+belong to **Pi + 3S**. Four verified supplemental choices bring the total to
+**499 algorithms**. They use new case and algorithm IDs; all original case
+objects, identifiers and the upstream snapshot are preserved.
+
+Each added reference starts with a completed bottom face. For the two
+single-hammer cases, the centre opposite that face is on a side; Pure Pi has
+the centres in their solved positions. The reference colour frame is chosen
+using a physical rotation of the solved puzzle, so WCA setups reach the exact
+state and the displayed NS solution needs no extra starting regrip. A bounded
+search produces 20 varied setups per addition, excluding the direct reference
+setup and paths with repeated physical states. All three additions are distinct
+from the imported cases even after whole-puzzle rotations and colour changes.
 
 Source algorithms mix Sarah-style and NS S/H shorthand. The generated
 catalogue expands accepted solutions to explicit **NS corner turns**, preserving
@@ -362,9 +381,9 @@ around DFR/DRB/DBL/DLF. The WCA mapping is independently documented in
 Corner turns are 120 degrees; whole-puzzle x/y/z rotations are 90 degrees.
 
 The new geometric simulator rotates corner and centre stickers and the app
-draws its own state-based diagrams. It verifies **2,620 prepared WCA setups**,
+draws its own state-based diagrams. It verifies **2,680 prepared WCA setups**,
 20 per case, all reaching their case's exact reference state. Disguised mode
-chooses among those equivalent setups; reference mode uses the source's fixed
+chooses among those equivalent setups; reference mode uses each case's fixed
 setup. This is case practice, not a claim of uniform random-state scrambling.
 Source colours are white up, yellow down, green front, red right, blue back and
 orange left; the completed bottom side after setup can have a different colour.

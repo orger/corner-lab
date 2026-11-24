@@ -1,5 +1,6 @@
 /** Generated from the NS2 subset of Alg-Trainers by Malte Ihlefeld (GPLv3).
- * Snapshot 3d19a613932319e33219105ad5bfd1f7a128ff24. Source and validation report: scripts/skewb-*.json.
+ * Snapshot 3d19a613932319e33219105ad5bfd1f7a128ff24, plus three supplemental easy NS2 cases.
+ * Source definitions and validation report: scripts/skewb-*.json.
  * Rebuild: node scripts/build-skewb-catalog.mjs. All solve algorithms use
  * explicit NS notation; all setups use WCA notation. No EG2 cases are included.
  */
@@ -9,13 +10,18 @@ export const SKEWB_NS2_SOURCE = {
   "repository": "https://github.com/mihlefeld/Alg-Trainers",
   "commit": "3d19a613932319e33219105ad5bfd1f7a128ff24",
   "license": "GPL-3.0",
-  "cases": 131,
+  "cases": 134,
+  "sourceCases": 131,
+  "supplementalCases": 3,
+  "supplementalSource": "https://sarah.cubing.net/skewb/advanced-variation-by-case.pdf",
   "groups": 20,
   "sourceAlgorithms": 576,
-  "verifiedAlgorithms": 495,
+  "sourceVerifiedAlgorithms": 495,
+  "supplementalAlgorithms": 4,
+  "verifiedAlgorithms": 499,
   "omittedAlgorithms": 81,
   "duplicateAlgorithms": 0,
-  "preparedScrambles": 2620
+  "preparedScrambles": 2680
 };
 export const SETS_SKEWB_NS2 = ['NS2'];
 export const GROUPS_SKEWB_NS2 = ["Pi + Swirl","Pi + Wat","Pi + X","Pi + HU","Pi + VU","Pi + O","Pi + ZC","Pi + 3S","Pi + HZ","Pn + Swirl","Pn + Wat","Pn + X","Pn + HU","Pn + VU","Pn + O","Pn + ZC","Pn + 3S","Pn + HZ Pure","L4C","L5C"];
@@ -9552,6 +9558,167 @@ export const CASES_SKEWB_NS2 = [
         "sourceIndex": 4,
         "originalAlg": "x r' R r z' r B' R r' R' B' r",
         "sourceNotation": "NS"
+      }
+    ]
+  },
+  {
+    "id": "NS2-132",
+    "puzzle": "skewb",
+    "set": "NS2",
+    "name": "Pure Pi",
+    "group": "Pn + HZ Pure",
+    "sourceId": null,
+    "supplemental": true,
+    "sourceUrl": "https://sarah.cubing.net/skewb/advanced-variation-by-case.pdf",
+    "sourcePage": 1,
+    "recognition": "Pi corners with all centres already in their solved relative positions.",
+    "setup": "B U' R' U B L' U' L",
+    "scrambles": [
+      "B' L R' L U L' R L'",
+      "L' R' B L B L U' R'",
+      "R B L' R' U' R' L B",
+      "U R' U B' R' L R' U",
+      "U' B L R' L' B R U'",
+      "B' R B R L' U' L' R' B'",
+      "L U B U B R' U' L' U",
+      "R' L' U' L' R' B L B L'",
+      "U L' R' L' U B U B R",
+      "B L U L' B U' R' L' R U'",
+      "B R B R U' R' U' L' U' L",
+      "B U' L U B U' L R' L' U'",
+      "B U' R U' L' U' B L R L'",
+      "B U' R' B' L' U' B L B L",
+      "B' L R L U' L' R' L U' L",
+      "B' L R' U R L' R B' L' B",
+      "B' R' L' R' B L U' R' B' L'",
+      "B' U' B L' U' R' B' R' L R'",
+      "L B L' R L U' B' R L' B'",
+      "L B U L' R' B' R' L B' R"
+    ],
+    "referenceSolvedOrientation": "x y",
+    "defaultAlgorithmId": "NS2-132-ss",
+    "algorithms": [
+      {
+        "id": "NS2-132-ss",
+        "alg": "R' F R F' R' F R F'",
+        "label": "Pure Pi · two sledges",
+        "originalAlg": "S S",
+        "source": "Sarah Strong’s Skewb guide · supplemental NS2 basics requested by the user",
+        "sourceUrl": "https://sarah.cubing.net/skewb/advanced-variation-by-case.pdf",
+        "sourcePage": 1,
+        "sourceNotation": "Sarah hammers",
+        "notation": "ns"
+      },
+      {
+        "id": "NS2-132-hh",
+        "alg": "y2 F R' F' R F R' F' R",
+        "label": "Pure Pi · turn, then two hedges",
+        "originalAlg": "y2 H H",
+        "source": "Sarah Strong’s Skewb guide · supplemental NS2 basics requested by the user",
+        "sourceUrl": "https://sarah.cubing.net/skewb/advanced-variation-by-case.pdf",
+        "sourcePage": 1,
+        "sourceNotation": "Sarah hammers",
+        "notation": "ns"
+      }
+    ]
+  },
+  {
+    "id": "NS2-133",
+    "puzzle": "skewb",
+    "set": "NS2",
+    "name": "Pi + 3S · side U · sledge",
+    "group": "Pi + 3S",
+    "sourceId": null,
+    "supplemental": true,
+    "sourceUrl": "https://sarah.cubing.net/skewb/advanced-variation-by-case.pdf",
+    "sourcePage": 5,
+    "recognition": "Pi + 3S with the opposite-to-bottom centre on the side; solved by one sledge.",
+    "setup": "B L' U' L",
+    "scrambles": [
+      "B U B U L' U' L' B'",
+      "U' B' L' U' B L B L",
+      "B R B R' B' L' R' U' L'",
+      "B U' B' U' L' U' L B L'",
+      "B' L' B' U' L' R' U R L",
+      "B' R U R L' R' U' R' B'",
+      "B' R' L R B U' R U B",
+      "B' U B L' U' B' L' B' L",
+      "B' U' B' L' R' U L U R'",
+      "R' U R L B' U' L' B' L'",
+      "U L U R' U B L R' L'",
+      "U' R' U' L' U' B L R L'",
+      "B L R' U' B' R' B R U L'",
+      "B L' R L B R B' R' L' U'",
+      "B R L R' U' L' B' U' B L",
+      "B R L' B R B' L' R' L U'",
+      "B R L' R' L U' L' B' U B",
+      "B R U B' L' B' L U B' R'",
+      "B U L' R' U' B' R' B R L",
+      "B U' B L U L' U' L B' U'"
+    ],
+    "referenceSolvedOrientation": "x x y x",
+    "defaultAlgorithmId": "NS2-133-sledge",
+    "algorithms": [
+      {
+        "id": "NS2-133-sledge",
+        "alg": "R' F R F'",
+        "label": "Single sledge",
+        "originalAlg": "S",
+        "source": "Sarah Strong’s Skewb guide · supplemental NS2 basics requested by the user",
+        "sourceUrl": "https://sarah.cubing.net/skewb/advanced-variation-by-case.pdf",
+        "sourcePage": 5,
+        "sourceNotation": "Sarah hammers",
+        "notation": "ns"
+      }
+    ]
+  },
+  {
+    "id": "NS2-134",
+    "puzzle": "skewb",
+    "set": "NS2",
+    "name": "Pi + 3S · side U · hedge",
+    "group": "Pi + 3S",
+    "sourceId": null,
+    "supplemental": true,
+    "sourceUrl": "https://sarah.cubing.net/skewb/advanced-variation-by-case.pdf",
+    "sourcePage": 5,
+    "recognition": "Pi + 3S with the opposite-to-bottom centre on the side; solved by one hedge.",
+    "setup": "R' L R B'",
+    "scrambles": [
+      "B R L R L' B' L' B'",
+      "R' B' R' B' L R B L",
+      "B U L U R U' L' U' B",
+      "B' L' U' L B' U' R' U B",
+      "R B R L B R' U' L' U",
+      "R B' R' L R L B L B'",
+      "R L U R B U B' U' B'",
+      "R U R' B' L' U L' R' L'",
+      "R U' R' B' L R L U L",
+      "R' B R B L R B' L' B",
+      "R' U' L' U R L B R B",
+      "U L' R' L' U R B L B",
+      "B L B' U' R L R' U' B' R",
+      "B L R L B R' L' R L R",
+      "B L U B L' B' L B U R",
+      "B R B U' B' R' L' B R U'",
+      "B R B U' L B R' L' B' U'",
+      "B R' B R' B' L R B' L B'",
+      "B R' B' L R B' L' B L B'",
+      "B U L U' B L R' L U L"
+    ],
+    "referenceSolvedOrientation": "x y",
+    "defaultAlgorithmId": "NS2-134-hedge",
+    "algorithms": [
+      {
+        "id": "NS2-134-hedge",
+        "alg": "F R' F' R",
+        "label": "Single hedge",
+        "originalAlg": "H",
+        "source": "Sarah Strong’s Skewb guide · supplemental NS2 basics requested by the user",
+        "sourceUrl": "https://sarah.cubing.net/skewb/advanced-variation-by-case.pdf",
+        "sourcePage": 5,
+        "sourceNotation": "Sarah hammers",
+        "notation": "ns"
       }
     ]
   }

@@ -1,9 +1,11 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import { solvedSkewb, applySkewbAlg, normalizeSkewbAlg, isSolvedSkewb, isSkewbFaceSolved, skewbStateKey } from '../app/skewb.js';
+import { prepareEasySkewbSetups } from './skewb-easy-setups.mjs';
 
 const read = path => JSON.parse(fs.readFileSync(new URL(path, import.meta.url), 'utf8'));
 const source = read('./skewb-ns2-source.json');
+const supplement = read('./skewb-ns2-supplement.json');
 const sourceUrl = `${source.repository}/blob/${source.commit}/${source.files.algorithms.path}`;
 const conventions = [
   { name: 'NS', macros: { S: "r' R r R'", H: "R r' R' r" } },
@@ -67,11 +69,32 @@ for (const [sourceId, item] of Object.entries(source.cases)) {
 assert.equal(cases.length, 131);
 assert.equal(groups.length, 20);
 assert.deepEqual(cases.map(c => c.sourceId), Array.from({ length: 131 }, (_, i) => i + 1));
+const sourceCases = cases.length, sourceVerifiedAlgorithms = validatedCount;
+for (const item of supplement.cases) {
+  assert(!cases.some(existing => existing.id === item.id), 'Supplemental IDs must not replace existing histories.');
+  assert(groups.includes(item.group), 'The additional easy cases belong to existing pattern groups.');
+  const prepared = prepareEasySkewbSetups(item.algorithms[0].alg);
+  const reference = applySkewbAlg(solvedSkewb(), prepared.setup, { notation: 'wca' });
+  for (const scramble of prepared.scrambles) assert.equal(
+    skewbStateKey(applySkewbAlg(solvedSkewb(), scramble, { notation: 'wca' })), skewbStateKey(reference));
+  const algorithms = item.algorithms.map(algorithm => {
+    const alg = normalizeSkewbAlg(algorithm.alg, { notation: 'ns' });
+    assert(isSolvedSkewb(applySkewbAlg(reference, alg)), `${algorithm.id}: supplemental solution must solve its full case`);
+    validatedCount++;
+    return { ...algorithm, alg, source: supplement.source, sourceUrl: supplement.sourceUrl,
+      sourcePage: item.sourcePage, sourceNotation: 'Sarah hammers', notation: 'ns' };
+  });
+  cases.push({ id: item.id, puzzle: 'skewb', set: 'NS2', name: item.name, group: item.group,
+    sourceId: null, supplemental: true, sourceUrl: supplement.sourceUrl, sourcePage: item.sourcePage,
+    recognition: item.recognition, ...prepared, defaultAlgorithmId: algorithms[0].id, algorithms });
+}
 const metadata = { source: source.source, sourceUrl: source.sourceUrl, repository: source.repository, commit: source.commit,
-  license: source.license, cases: cases.length, groups: groups.length, sourceAlgorithms: sourceCount,
+  license: source.license, cases: cases.length, sourceCases, supplementalCases: supplement.cases.length,
+  supplementalSource: supplement.sourceUrl, groups: groups.length, sourceAlgorithms: sourceCount,
+  sourceVerifiedAlgorithms, supplementalAlgorithms: validatedCount - sourceVerifiedAlgorithms,
   verifiedAlgorithms: validatedCount, omittedAlgorithms: rejected.length, duplicateAlgorithms: duplicates.length,
   preparedScrambles: cases.reduce((count, c) => count + c.scrambles.length, 0) };
-const text = `/** Generated from the NS2 subset of Alg-Trainers by Malte Ihlefeld (GPLv3).\n * Snapshot ${source.commit}. Source and validation report: scripts/skewb-*.json.\n * Rebuild: node scripts/build-skewb-catalog.mjs. All solve algorithms use\n * explicit NS notation; all setups use WCA notation. No EG2 cases are included.\n */\nexport const SKEWB_NS2_SOURCE = ${JSON.stringify(metadata, null, 2)};\nexport const SETS_SKEWB_NS2 = ['NS2'];\nexport const GROUPS_SKEWB_NS2 = ${JSON.stringify(groups)};\nexport const CASES_SKEWB_NS2 = ${JSON.stringify(cases, null, 2)};\n`;
+const text = `/** Generated from the NS2 subset of Alg-Trainers by Malte Ihlefeld (GPLv3).\n * Snapshot ${source.commit}, plus three supplemental easy NS2 cases.\n * Source definitions and validation report: scripts/skewb-*.json.\n * Rebuild: node scripts/build-skewb-catalog.mjs. All solve algorithms use\n * explicit NS notation; all setups use WCA notation. No EG2 cases are included.\n */\nexport const SKEWB_NS2_SOURCE = ${JSON.stringify(metadata, null, 2)};\nexport const SETS_SKEWB_NS2 = ['NS2'];\nexport const GROUPS_SKEWB_NS2 = ${JSON.stringify(groups)};\nexport const CASES_SKEWB_NS2 = ${JSON.stringify(cases, null, 2)};\n`;
 fs.writeFileSync(new URL('../app/catalog-skewb-ns2.js', import.meta.url), text);
 fs.writeFileSync(new URL('./skewb-catalog-report.json', import.meta.url), JSON.stringify({ ...metadata, rejected, duplicates }, null, 2) + '\n');
 console.log(`Skewb NS2: ${cases.length} cases, ${validatedCount} verified choices, ${metadata.preparedScrambles} equivalent setups; ${rejected.length} unverified source alternatives omitted.`);

@@ -16,7 +16,7 @@ An offline trainer for Mac and iPhone covering 2×2 CLL, EG1, EG2, AUF recogniti
 
 Choose **Square‑1 · Cube shape** from the trainer menu for all 169 non-cube shape pairs, disguised or inverse setups, independently randomised final layer positions, case selection, timers, learning batches and separate statistics. See the [user guide](docs/USER-GUIDE.md#square-1-cube-shape).
 
-Version **1.8.2** adds your shape routes and recognition notes to the **Square‑1 · Cube shape** solution reveal. The notes follow the corresponding case, including mirrored and swapped-layer variants, without replacing your chosen algorithm. All three Square‑1 trainers retain short disguised setups with at least five slices. All seven trainers offer case subsets, preferred algorithm choices, timing, Learning batches, recent-speed and recall practice, filtered statistics and full-set progress charts. Their histories stay independent.
+Version **1.8.3** adds the three missing easy Skewb NS2 cases: **Pure Pi** in the existing **Pn + HZ Pure** group, plus the two **Pi + 3S** cases solved by a single sledge or hedge. The NS2 catalogue now has **134 cases**, with case selection, varied scrambles, timing and statistics for the additions. Existing selections, algorithm choices and histories are preserved.
 
 ## Run on iPhone
 
@@ -70,7 +70,7 @@ Start both trainers from a fully solved Square-1, **white up and green front**, 
 
 ## Skewb NS2
 
-Choose **Skewb · NS2** for **131 NS2 cases** in 20 pattern groups. Start solved, **white up and green front**, and apply the setup in **WCA Skewb notation**. The completed side is then on the bottom; its colour varies. Stop when the whole Skewb is solved.
+Choose **Skewb · NS2** for **134 NS2 cases** in 20 pattern groups. Start solved, **white up and green front**, and apply the setup in **WCA Skewb notation**. The completed side is then on the bottom; its colour varies. Stop when the whole Skewb is solved.
 
 Solutions use **explicit NS notation**, where uppercase and lowercase letters turn different corners. This differs from the WCA notation used for setups; Settings and the [NS2 guide](docs/USER-GUIDE.md#skewb-ns2) show the corner mappings. Hammer shorthand is expanded into individual turns. Disguised mode chooses among 20 verified equivalent setups per case. The source's separate EG2 cases are excluded.
 
@@ -82,7 +82,7 @@ Solutions use **explicit NS notation**, where uppercase and lowercase letters tu
 - 36 named first-face patterns in the supplied PDF's 22 families, with its primary 1/3/4/5-move solutions; 9 printed secondary choices are retained in the data catalog.
 - 13 supplied 5×5 last-two-edges cases with 27 direction/axis choices, and 19 CubeSkills last-two-centres cases verified against both pages of the supplied PDF.
 - Square-1 includes 169 cube-shape cases, 185 OBL cases with 641 algorithm choices, and 99 EP cases with 169 choices, including all 50 parity cases.
-- Skewb includes 131 NS2 cases in 20 groups with 495 verified algorithm choices; the source's separate EG2 set is excluded.
+- Skewb includes 134 NS2 cases in 20 groups with verified algorithm choices, including Pure Pi and the single-sledge/hedge cases; the source's separate EG2 set is excluded.
 - Generated scrambles are checked against the relevant training goal: shape, orientation, permutation, or full solve. These are case-training scrambles, not competition random-state scrambles.
 - Results are timed and flagged by the solver; there is no smart-cube connection or automatic solve detection.
 

@@ -604,10 +604,20 @@ for speed-focused practice.
 
 ## Skewb NS2
 
-Select **Skewb · NS2** for the **131 NS2 cases** in 20 pattern groups. Only NS2
+Select **Skewb · NS2** for **134 NS2 cases** in 20 pattern groups. Only NS2
 is included; the source's separate EG2 set is excluded. The library offers
-**495 verified algorithm choices**. Choose any case subset and a preferred
+**499 verified algorithm choices**. Choose any case subset and a preferred
 algorithm for each case, just as in the other trainers.
+
+The three easy cases omitted from the original collection are included:
+**Pure Pi** is in **Pn + HZ Pure**; **Pi + 3S** includes the two cases with
+the U-face centre on a side, solved by one sledge or one hedge. Here the U face
+is opposite the completed bottom face; its colour can vary. Pure Pi's
+default solution is two sledges. The reveal spells out the corner turns, so
+there is no need to remember a separate S/H notation. The additions have the
+same case selection, Learning batches, timing and statistics as other cases.
+Your existing selections are kept; choose the new cases in the library or
+use **Select shown** to include them in practice.
 
 Start every setup from a solved Skewb held **white up and green front**: red
 right, orange left, blue back and yellow down. After the setup, a completed
@@ -632,7 +642,7 @@ make the displayed solutions unambiguous. Include any rotations shown.
 
 **Disguised scramble** chooses among **20 verified WCA setups per case**, each
 reaching the same complete state and working with the selected solution.
-**Reference setup** gives a fixed source setup. These are practice setups, not
+**Reference setup** gives a fixed setup. These are practice setups, not
 uniform random-state scrambles. The diagram shows the actual stickers and the
 completed bottom side; there is no Square-1 layer-orientation control.
 

@@ -4,7 +4,7 @@ Run `bash scripts/build-mac.sh` from the project folder. It compiles a Swift App
 
 The build draws the icon using `GenerateIcon.swift`, packages its PNG representations with the standard-library Python script `scripts/create-icns.py`, and verifies the app's signature. The bundle also includes the license, source credits, and user guide.
 
-Version 1.8.2 (build 13) includes seven trainers: 2×2 CLL/EG, 5×5 last two edges, 5×5 last two centres, Square-1 cube shape, Square-1 OBL, Square-1 EP and Skewb NS2. The cube-shape reveal now includes your shape routes and recognition notes. All share the same bundled interface as the web app. Each trainer retains its own selections, algorithm choices, practices and history.
+Version 1.8.3 (build 14) includes seven trainers: 2×2 CLL/EG, 5×5 last two edges, 5×5 last two centres, Square-1 cube shape, Square-1 OBL, Square-1 EP and Skewb NS2. The NS2 catalogue now includes Pure Pi and the two single-sledge/hedge cases, for 134 cases in total. All share the same bundled interface as the web app. Each trainer retains its own selections, algorithm choices, practices and history.
 
 For native runtime checks, `bash scripts/test-native.sh` launches a separate test executable using the actual app interface and an isolated `.build/native-qa-<UUID>/data.json` file. It checks module loading, UI time entry, native persistence, previous-file backup, reload, and library rendering without modifying the normal application data file. The three new trainers each save and restore a result, render their catalogue and progress graph, and fit the shared 390px phone layout. It opens a temporary native window and requires permission to run GUI programs in restricted environments. Screenshots and test data stay under `.build/` and are excluded from release packages.
 
@@ -17,7 +17,7 @@ For native runtime checks, `bash scripts/test-native.sh` launches a separate tes
 - `exportData(data)` opens a macOS Save panel and resolves to `{ exported: true }`, or `null` if cancelled.
 - `exportText(filename, content, contentType = 'text/csv')` opens a macOS Save panel for UTF-8 text, useful for CSV. It resolves to `{ exported: true }`, or `null` if cancelled.
 - `importData()` opens a macOS Open panel, parses a JSON file and returns its contents, or `null` if cancelled. The UI must validate its own schema and confirm replacement before calling `save()`.
-- `info()` returns `{ platform: 'macOS', dataPath, version: '1.8.2' }`.
+- `info()` returns `{ platform: 'macOS', dataPath, version: '1.8.3' }`.
 
 The app also dispatches `cornerlab-native-ready` on `window` at DOMContentLoaded. Calls use `window.webkit.messageHandlers.storage.postMessage({id, action, payload})` internally, with native responses sent through `window.__cornerlabNativeReply`.
 

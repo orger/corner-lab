@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import { CASES_SKEWB_NS2, GROUPS_SKEWB_NS2, SKEWB_NS2_SOURCE } from '../app/catalog-skewb-ns2.js';
 import { solvedSkewb, applySkewbAlg, parseSkewbAlg, normalizeSkewbAlg, inverseSkewb, skewbFacelets, skewbStateKey, isSolvedSkewb, isSkewbFaceSolved, validateSkewbAlgorithm, createSkewbDrill, previewSkewbState } from '../app/skewb.js';
 import { skewbSVG, SKEWB_COLORS } from '../app/skewb-view.js';
@@ -8,6 +9,7 @@ import { skewbSVG, SKEWB_COLORS } from '../app/skewb-view.js';
 const applyWCA = (state, alg) => applySkewbAlg(state, alg, { notation: 'wca' });
 const source = JSON.parse(fs.readFileSync(new URL('../scripts/skewb-ns2-source.json', import.meta.url), 'utf8'));
 const report = JSON.parse(fs.readFileSync(new URL('../scripts/skewb-catalog-report.json', import.meta.url), 'utf8'));
+const supplement = JSON.parse(fs.readFileSync(new URL('../scripts/skewb-ns2-supplement.json', import.meta.url), 'utf8'));
 
 test('Skewb WCA R has the documented DRB axis and physically correct sticker cycle', () => {
   const state = applyWCA(solvedSkewb(), 'R');
@@ -75,16 +77,24 @@ test('Skewb parser rejects ambiguous hammer/source notation and malformed input'
 });
 
 test('Skewb catalogue includes every requested NS2 case, no EG2 cases, with source provenance and explicit NS choices', () => {
-  assert.equal(CASES_SKEWB_NS2.length, 131);
+  assert.equal(CASES_SKEWB_NS2.length, 134);
   assert.equal(GROUPS_SKEWB_NS2.length, 20);
-  assert.deepEqual(CASES_SKEWB_NS2.map(c => c.sourceId), Array.from({ length: 131 }, (_, i) => i + 1));
-  assert.equal(new Set(CASES_SKEWB_NS2.map(c => c.id)).size, 131);
+  const imported = CASES_SKEWB_NS2.filter(item => !item.supplemental);
+  assert.deepEqual(imported.map(c => c.sourceId), Array.from({ length: 131 }, (_, i) => i + 1));
+  assert.equal(new Set(CASES_SKEWB_NS2.map(c => c.id)).size, 134);
   assert.equal(SKEWB_NS2_SOURCE.commit, source.commit);
-  assert.equal(SKEWB_NS2_SOURCE.preparedScrambles, 2620);
-  assert.equal(SKEWB_NS2_SOURCE.verifiedAlgorithms, 495);
+  assert.equal(SKEWB_NS2_SOURCE.sourceCases, 131);
+  assert.equal(SKEWB_NS2_SOURCE.supplementalCases, 3);
+  assert.equal(SKEWB_NS2_SOURCE.preparedScrambles, 2680);
+  assert.equal(SKEWB_NS2_SOURCE.verifiedAlgorithms, 499);
+  assert.equal(SKEWB_NS2_SOURCE.sourceVerifiedAlgorithms, 495);
+  assert.equal(SKEWB_NS2_SOURCE.supplementalAlgorithms, 4);
   assert.equal(report.rejected.length, 81);
-  assert.equal(report.verifiedAlgorithms + report.rejected.length + report.duplicateAlgorithms, report.sourceAlgorithms);
-  for (const item of CASES_SKEWB_NS2) {
+  assert.equal(report.sourceVerifiedAlgorithms + report.rejected.length + report.duplicateAlgorithms, report.sourceAlgorithms);
+  assert.equal(createHash('sha256').update(JSON.stringify(imported)).digest('hex'),
+    '98c4e86e29c095ba0b5a08e0944b5424f4650aae604f04b41aecb74697d7a915',
+    'All existing case objects, algorithm choices and reference setups remain unchanged.');
+  for (const item of imported) {
     const raw = source.cases[item.sourceId];
     assert.equal(item.set, 'NS2'); assert.equal(raw.algset, 'NS2');
     assert.equal(item.group, raw.group); assert.equal(item.name, raw.name);
@@ -101,7 +111,7 @@ test('Skewb catalogue includes every requested NS2 case, no EG2 cases, with sour
   }
 });
 
-test('all 2620 Skewb scrambles reach their exact case and every retained algorithm solves all twenty setups', () => {
+test('all 2680 Skewb scrambles reach their exact case and every retained algorithm solves all twenty setups', () => {
   const identity = solvedSkewb(); let checkedAlgs = 0, checkedSetups = 0, combined = 0;
   for (const item of CASES_SKEWB_NS2) {
     const reference = applyWCA(identity, item.setup);
@@ -123,7 +133,77 @@ test('all 2620 Skewb scrambles reach their exact case and every retained algorit
       }
     }
   }
-  assert.equal(checkedSetups, 2620); assert.equal(checkedAlgs, 495); assert.equal(combined, 9900);
+  assert.equal(checkedSetups, 2680); assert.equal(checkedAlgs, 499); assert.equal(combined, 9980);
+});
+
+test('the three supplemental NS2 basics have Pure Pi or side-facing U-centre Pi + 3S geometry', () => {
+  const added = CASES_SKEWB_NS2.filter(item => item.supplemental);
+  assert.deepEqual(added.map(item => item.id), ['NS2-132', 'NS2-133', 'NS2-134']);
+  assert.deepEqual(added.map(item => item.group), ['Pn + HZ Pure', 'Pi + 3S', 'Pi + 3S']);
+  assert.equal(added[0].name, 'Pure Pi');
+  assert.equal(CASES_SKEWB_NS2.filter(item => item.group === 'Pi + 3S').length, 4);
+  assert.equal(CASES_SKEWB_NS2.filter(item => item.group === 'Pn + HZ Pure').length, 5);
+  const expected = ["R' F R F' R' F R F'", "R' F R F'", "F R' F' R"];
+  for (const [index, item] of added.entries()) {
+    assert.equal(item.sourceId, null, 'New IDs must not claim the upstream EG2 source entries.');
+    assert.equal(item.sourceUrl, supplement.sourceUrl);
+    assert.equal(item.algorithms[0].alg, expected[index]);
+    assert.equal(item.defaultAlgorithmId, item.algorithms[0].id);
+    const reference = applyWCA(solvedSkewb(), item.setup), faces = skewbFacelets(reference);
+    const solved = applySkewbAlg(reference, item.algorithms[0].alg), complete = skewbFacelets(solved);
+    assert(isSolvedSkewb(solved));
+    assert(isSkewbFaceSolved(reference, 'D'));
+    const oppositeBottom = complete.U[0];
+    assert.equal(faces.U.slice(1).filter(color => color === oppositeBottom).length, 0, 'Pi has no oriented U-layer corners.');
+    if (!index) {
+      for (const face of ['U', 'D', 'F', 'B', 'R', 'L']) assert.equal(faces[face][0], complete[face][0], 'Pure Pi centres are already correct.');
+      assert.equal(item.algorithms.length, 2, 'Pure Pi offers sledge and hedge choices.');
+    } else {
+      assert.equal(faces.R[0], oppositeBottom, 'The U centre is on a side in the reference grip.');
+      assert.equal(['F', 'R', 'B', 'L'].filter(face => faces[face][0] !== complete[face][0]).length, 3, 'Three side centres are misplaced.');
+      assert.equal(parseSkewbAlg(item.algorithms[0].alg).length, 4, 'One hammer, with no hidden regrip or extra turns.');
+    }
+  }
+});
+
+test('supplemental disguised setups are distinct short physical routes without identity padding', () => {
+  for (const item of CASES_SKEWB_NS2.filter(item => item.supplemental)) {
+    assert.equal(item.scrambles.length, 20);
+    assert.equal(new Set(item.scrambles).size, 20);
+    assert(!item.scrambles.includes(item.setup), 'Disguise excludes the direct setup.');
+    for (const scramble of item.scrambles) {
+      const tokens = scramble.split(' ');
+      assert(tokens.length >= 8 && tokens.length <= 10, 'Keep the alternate route practical.');
+      assert(tokens.every((token, index) => /^[URLB]'?$/.test(token) && (!index || token[0] !== tokens[index - 1][0])));
+      let state = solvedSkewb(); const seen = new Set([skewbStateKey(state)]);
+      for (const token of tokens) {
+        state = applyWCA(state, token); const key = skewbStateKey(state);
+        assert(!seen.has(key), 'A route must not revisit a state as padding.');
+        seen.add(key);
+      }
+    }
+  }
+});
+
+test('the supplemental cases are genuinely new under every whole-cube orientation and solved colour frame', () => {
+  const orientations = [solvedSkewb()], seen = new Set([skewbStateKey(orientations[0])]);
+  for (let i = 0; i < orientations.length; i++) for (const move of ['x', 'y', 'z']) {
+    const next = applySkewbAlg(orientations[i], move), key = skewbStateKey(next);
+    if (!seen.has(key)) { seen.add(key); orientations.push(next); }
+  }
+  const canonical = state => {
+    const variants = [];
+    for (const frame of orientations) for (const view of orientations) variants.push(view.map(index => frame[state[index]]).join(','));
+    return variants.sort()[0];
+  };
+  const original = new Set(CASES_SKEWB_NS2.filter(item => !item.supplemental).map(item => canonical(applyWCA(solvedSkewb(), item.setup))));
+  assert.equal(original.size, 131);
+  for (const item of CASES_SKEWB_NS2.filter(item => item.supplemental)) {
+    const key = canonical(applyWCA(solvedSkewb(), item.setup));
+    assert(!original.has(key), `${item.name} must not duplicate an existing case or another new case.`);
+    original.add(key);
+  }
+  assert.equal(original.size, 134);
 });
 
 test('Skewb drill styles use WCA setups, preserve case state and reveal the selected NS solution', () => {
