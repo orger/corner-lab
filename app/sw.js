@@ -1,7 +1,7 @@
 /* Only public, bundled app files are cached. Training history stays in storage.js. */
 const CACHE_PREFIX = 'corner-lab-static-';
 // Direct app/ previews keep this source version. build-web assigns a content hash.
-const CACHE_VERSION = 'source-v1.8.3';
+const CACHE_VERSION = 'source-v1.9.0';
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 // The web build replaces this list with every published app asset.
 const PRECACHE = [
@@ -13,6 +13,7 @@ const PRECACHE = [
   './additional-trainers.js', './square1-last-layer.js', './square1-last-layer-view.js',
   './catalog-square1-obl.js', './catalog-square1-ep.js', './data-square1-obl.js', './data-square1-ep.js',
   './catalog-skewb-ns2.js', './skewb.js', './skewb-view.js',
+  './catalog-skewb-first-layer.js', './skewb-first-layer.js',
   './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'
 ];
 const assetURLs = PRECACHE.map(path => new URL(path, self.registration.scope).href);

@@ -2,13 +2,13 @@
 
 Corner Lab trains 2×2 CLL, EG1, EG2, recognition AUF, finishing AUF, and short
 one-look solutions with the first face on the bottom. It also trains 5×5 last
-two edges, last two centres, Square-1 cube shape, OBL and EP, and Skewb NS2.
-Choose one of the seven trainers from the selector beside the
+two edges, last two centres, Square-1 cube shape, OBL and EP, and Skewb first layer and NS2.
+Choose one of the eight trainers from the selector beside the
 app name. You use your physical cube and record times with the keyboard, a
 button, or manual entry. The following practice instructions describe the 2×2
 trainer; see [5X5-GUIDE.md](5X5-GUIDE.md) for 5×5 practice and
 [Square-1 cube shape](#square-1-cube-shape), [OBL and EP](#square-1-obl-and-ep),
-and [Skewb NS2](#skewb-ns2) below for their goals and notation.
+[Skewb first layer](#skewb-first-layer), and [Skewb NS2](#skewb-ns2) below for their goals and notation.
 
 ## Start a practice
 
@@ -353,13 +353,13 @@ slowest typical time, most inconsistency, or least practice. Small groups show
 ## Track progress across a complete algorithm set
 
 Open **Insights** in any trainer and use the **Full-set progress** card. Its
-**Full algorithm set** selector offers thirteen choices:
+**Full algorithm set** selector offers fourteen choices:
 
 - 2×2 CLL, EG1, or EG2 individually.
 - CLL + EG1, CLL + EG2, EG1 + EG2, or all three together.
 - 5×5 last two edges or 5×5 last two centres.
 - Square-1 cube shape, OBL, or EP.
-- Skewb NS2.
+- Skewb first layer or NS2.
 
 The single curve summarises the selected algorithm set. Choose **Solves per
 case (N)** from 1 to 100; the default is 5. For each case, the app takes the
@@ -419,7 +419,7 @@ The card always uses the **complete selected algorithm set**, independent of
 the cases currently selected for practice and of the other Insights filters
 below it. Its controls last for the current app session and are not stored in
 saved practice presets. Switching trainer selects that trainer's full set as
-the initial chart choice, while the selector still offers all thirteen choices.
+the initial chart choice, while the selector still offers all fourteen choices.
 Deleting, resetting, importing or changing flags on stored results recalculates
 the chart from the remaining eligible history.
 
@@ -461,7 +461,7 @@ preferred and personal algorithms, saved practices, and all results. **Import
 backup…** validates its structure and personal algorithms before asking to
 replace the current data. Import replaces data; it does not merge histories.
 
-One backup contains all seven trainers. Each retains its own case selection,
+One backup contains all eight trainers. Each retains its own case selection,
 preferred algorithms, settings, practices and results. Backups from older
 versions load with new trainers empty; their recorded times and algorithm text
 are preserved. CSV exports and filtered resets affect the current trainer only.
@@ -535,7 +535,7 @@ recall focus work as in the other trainers. Inspection and solve times are
 recorded separately. Insights includes inspection averages and percentages
 under 15, 12 and 8 seconds, as well as the full-set progress chart and its date
 sliders. Filters, CSV exports and resets apply only to Square-1 results. Full
-backups include all seven trainers. Older backups gain independent empty sections
+backups include all eight trainers. Older backups gain independent empty sections
 for trainers they did not yet contain, while their existing histories stay unchanged.
 
 This mode practises cube-shape recognition and execution. It does not train
@@ -601,6 +601,59 @@ regardless of the selected practice subset. Each practised case contributes
 equally through the mean of its latest up to N eligible solves. Cases with no
 solves are omitted; this chart average is distinct from the clean median used
 for speed-focused practice.
+
+## Skewb first layer
+
+Select **Skewb · First layer** to practise finishing the bottom layer when the
+**back-left bottom corner, back-right bottom corner and bottom centre** are
+already solved. The goal includes correct corner side colours. Other centres
+and upper corners can remain mixed. Moves may temporarily disturb the fixed
+pieces, provided the complete bottom layer is restored at the end.
+
+There are **81 legal cases**, including one already-solved skip. Each missing
+corner has three available positions in its own set of reachable corners,
+with three orientations per position: **9 × 9 = 81**. The **80 unsolved cases**
+are selected by default, including cases where one front corner is already
+solved. Choose the optional **Already solved** case to practise recognising a
+skip. The full-set chart covers all 81; as elsewhere, unpractised cases are
+omitted from the average.
+
+Start every setup fully solved, **white up, green front and yellow down**.
+The dots in the bottom diagram mark the fixed centre and rear corners. Read
+all six faces from outside the puzzle; the bottom view's rear edge is at the
+bottom of that small diagram.
+
+**Both setups and solutions use NS notation** in this trainer:
+
+| Letter | Corner | Letter | Corner |
+| --- | --- | --- | --- |
+| F | UFR | f | DFR |
+| R | URB | r | DRB |
+| B | UBL | b | DBL |
+| L | ULF | l | DLF |
+
+U/D mean up/down, F/B front/back and R/L right/left. Each move is a **120°
+clockwise turn looking at that corner**; a prime reverses it. Uppercase moves
+turn top corners; lowercase moves turn bottom corners. The NS2 trainer uses
+WCA notation for its setups, so check the setup heading when switching stages.
+
+In case names, **LF** identifies the yellow–green–orange corner and **RF** the
+yellow–green–red corner. Their locations and yellow-sticker directions distinguish
+all cases. Recognition groups separate corners on top, twisted bottom corners,
+mixed cases and cases with one corner already solved. Choose any subset and
+select your preferred solution in the case details. Shortest solutions take
+**one to five turns**; the skip needs none.
+
+**Disguised scramble** varies the move sequence and the irrelevant pieces while
+preserving the selected first-layer case. **Reference setup** is the direct
+inverse of the selected solution. Every offered solution works for every
+supplied disguised setup of its case.
+
+The trainer has independent selection, preferences, saved practices and history.
+It supports Learning batches, recent-speed focus, both timer modes, optional
+inspection cues, inspection statistics, filtered resets and a full-set progress
+chart. A full backup includes this trainer, and importing an older backup adds
+its default selection and an empty history without changing earlier results.
 
 ## Skewb NS2
 

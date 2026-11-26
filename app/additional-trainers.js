@@ -6,6 +6,8 @@ import { solvedSquare1, applySquare1Alg, inverseSquare1 } from './square1.js';
 import { CASES_SKEWB_NS2 } from './catalog-skewb-ns2.js';
 import { createSkewbDrill, previewSkewbState } from './skewb.js';
 import { skewbSVG } from './skewb-view.js';
+import { CASES_SKEWB_FIRST_LAYER } from './catalog-skewb-first-layer.js';
+import { createSkewbFirstLayerDrill, previewSkewbFirstLayerState } from './skewb-first-layer.js';
 
 const square1Moves = '(a,b) turns the top and bottom in 30° steps, clockwise when viewed from outside that layer. / slices the right half by 180°. Only slice when both layers have a gap along the cut.';
 const square1Preview = alg => applySquare1Alg(solvedSquare1(), inverseSquare1(alg));
@@ -55,6 +57,30 @@ export const ADDITIONAL_TRAINERS = [
         caseHelp: 'The diagram shows the edge permutation in this algorithm’s reference alignment. The practice reveal includes all required starting and finishing turns.',
         notationHTML: `<p>${epSource}</p><p>${square1Moves}</p><p>Disguised scrambles use short alternative routes with at least five slices to the selected permutation. The reveal includes final layer alignment and a middle-layer correction when needed, so the full sequence finishes the puzzle.</p><p><a href="https://sarah.cubing.net/square-1/ep" target="_blank" rel="noreferrer">Sarah Strong’s EP collection ↗</a></p>`,
         presetHint: 'e.g. EP parity cases', exportName: 'Square1-EP',
+      },
+    },
+  },
+  {
+    id: 'skewb-first-layer', label: 'Skewb · First layer', branch: 'skewbfl', cases: CASES_SKEWB_FIRST_LAYER,
+    options: {
+      kind: 'skewb-first-layer', setId: 'FL', buildDrill: createSkewbFirstLayerDrill,
+      previewState: previewSkewbFirstLayerState, diagram: (state, options) => skewbSVG(state, { ...options, firstLayer: true }),
+      presentation: {
+        noun: 'first-layer', singular: 'first-layer', title: 'Finish the first layer.', eyebrow: 'SKEWB / FIRST LAYER',
+        intro: 'Two rear corners and the bottom centre are in place. Finish the two front corners.',
+        sourceNote: 'All 81 legal configurations with the yellow bottom centre and both rear-bottom corners solved: 80 unsolved cases and one optional skip. Each missing corner has nine possible positions and orientations. Solutions finish the entire bottom layer, including side colours.',
+        libraryTitle: '81 first-layer cases. Your selection.', libraryIntro: 'Choose recognition groups or individual cases. The 80 unsolved cases are selected by default; Already solved is an optional skip.',
+        selectionHelp: 'Select patterns here, or choose individual positions and twists in the library.',
+        setupTitle: 'SETUP FROM A SOLVED SKEWB · NS NOTATION',
+        setupHelp: 'Start solved with white up, green front and yellow down. Both setups and solutions use NS corner turns; uppercase and lowercase turn different corners. See Settings for the mapping.',
+        referenceHelp: 'Start fully solved, white up and green front. After the setup, the yellow centre and the two rear-bottom corners remain in place. Keep this grip throughout the solution.',
+        previewHelp: 'The dots on the bottom view mark the fixed centre and rear corners. Complete the yellow bottom layer with its side colours matching; the other centres and upper corners can remain mixed.',
+        solutionHelp: 'NS notation. Stop with all four bottom corners and the yellow centre correctly placed, including the corner side colours. The fixed pieces may move during the solution, but must finish restored.',
+        caseHelp: 'LF is the yellow–green–orange corner; RF is yellow–green–red. The case name gives each corner’s location and the direction its yellow sticker faces. Both setups and solutions use NS notation.',
+        moveHelp: 'NS: F=UFR, R=URB, B=UBL, L=ULF; f=DFR, r=DRB, b=DBL, l=DLF. Each letter turns 120° clockwise looking at that corner; a prime reverses it. U/D mean up/down, F/B front/back, and R/L right/left in corner names.',
+        providedLabel: 'Reference setup', insightsTitle: 'Recognise the corners. Shorten the pause.',
+        notationHTML: '<p>All 81 legal first-layer cases keep the bottom centre and the two rear-bottom corners solved. The 80 unsolved cases are selected initially; select Already solved to practise recognising a skip. Cases with a third corner already solved are included.</p><p>Start fully solved, white up, green front and yellow down. Finish with the yellow centre and all four yellow corners correctly placed, including their side colours. Other centres and upper corners are outside this step.</p><p><strong>Both setups and solutions use NS notation:</strong> F=UFR, R=URB, B=UBL, L=ULF; f=DFR, r=DRB, b=DBL, l=DLF. Uppercase turns a top corner and lowercase turns a bottom corner. Turn 120° clockwise when looking directly at the named corner; a prime reverses it. This differs from the WCA setups used in the NS2 trainer.</p><p>Each front corner has three available positions and three orientations, giving 9 × 9 = 81 cases. The library includes shortest solutions of one to five turns. Disguised scrambles vary the route and the irrelevant pieces while preserving the selected first-layer case. Reference setup is the direct inverse of your chosen solution.</p>',
+        presetHint: 'e.g. Both corners on top', exportName: 'Skewb-First-Layer',
       },
     },
   },

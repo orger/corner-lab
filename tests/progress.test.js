@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rollingSetProgress, progressCoordinates, progressSets, createProgressView } from '../app/progress.js';
+import { CASES_SKEWB_FIRST_LAYER } from '../app/catalog-skewb-first-layer.js';
+import { CASES_SKEWB_NS2 } from '../app/catalog-skewb-ns2.js';
 
 const at = (caseId, seconds, day, extras = {}) => ({ caseId, seconds, createdAt: `2026-10-${String(day).padStart(2, '0')}T12:00:00.000Z`, mode: 'last-layer', timingMode: 'simple', ...extras });
 const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-10, `${actual} should equal ${expected}`);
@@ -156,6 +158,41 @@ test('view reads each trainer history independently and defaults to last-layer p
   assert.equal(h.view.snapshot().result.value, 10);
   h.view.content({ trainer: '5x5-centres' });
   assert.equal(h.view.snapshot().result.value, 30);
+  assert.deepEqual(data, before);
+});
+
+test('Skewb first-layer progress weighs the full set equally and keeps NS2 history separate', () => {
+  const [first, second] = CASES_SKEWB_FIRST_LAYER.filter(item => !item.isSkip);
+  const ns2 = CASES_SKEWB_NS2[0];
+  const data = {
+    skewbfl: { settings: { selectedCases: [first.id] }, attempts: [at(first.id, 2, 1), at(first.id, 4, 2), at(second.id, 10, 3), at(first.id, 6, 4)] },
+    skewbns2: { attempts: [at(ns2.id, 30, 1), at(ns2.id, 20, 3)] },
+  };
+  const before = structuredClone(data);
+  const view = createProgressView({ getData: () => data, render() {}, additionalSets: [
+    { id: 'skewb-first-layer', label: 'Skewb · First layer', branch: 'skewbfl', cases: CASES_SKEWB_FIRST_LAYER },
+    { id: 'skewb-ns2', label: 'Skewb · NS2', branch: 'skewbns2', cases: CASES_SKEWB_NS2 },
+  ] });
+  const change = (field, value) => view.change({ target: { dataset: { progress: field }, value } });
+  change('window', '2');
+  view.content({ trainer: 'skewb-first-layer' });
+  const result = view.snapshot().result;
+  assert.equal(view.snapshot().setId, 'skewb-first-layer');
+  assert.equal(result.value, 7.5, 'each case mean contributes equally despite unequal practice counts');
+  assert.equal(result.totalCases, CASES_SKEWB_FIRST_LAYER.length, 'practice selection does not trim the full-set graph');
+  assert.equal(result.contributingCaseCount, 2);
+  assert.equal(result.missingCaseCount, CASES_SKEWB_FIRST_LAYER.length - 2);
+  assert.equal(result.cases.find(item => item.caseId === CASES_SKEWB_FIRST_LAYER.find(item => item.isSkip).id).count, 0);
+
+  change('range-start', '1');
+  change('range-end', '2');
+  change('set', 'skewb-ns2');
+  view.content({ trainer: 'skewb-first-layer' });
+  assert.equal(view.snapshot().result.value, 25);
+  assert.deepEqual(view.snapshot().displayedPoints.map(item => item.date), [at('', 0, 3).createdAt]);
+  change('set', 'skewb-first-layer');
+  view.content({ trainer: 'skewb-first-layer' });
+  assert.deepEqual(view.snapshot().displayedPoints.map(item => item.date), [2, 3].map(day => at('', 0, day).createdAt));
   assert.deepEqual(data, before);
 });
 

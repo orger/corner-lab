@@ -395,9 +395,39 @@ node scripts/build-skewb-catalog.mjs
 node --test tests/skewb.test.js tests/trainer-expansion-storage.test.js
 ```
 
-All seven Corner Lab trainers share timing and statistics code but retain
+All eight Corner Lab trainers share timing and statistics code but retain
 independent histories. Full-set charts average the recent means of individual
 cases with equal weight; practice speed rankings use recent clean medians.
 Neither graph values nor historical algorithm text are rewritten during a
 catalogue update. Supplied PDFs, personal backups and synthetic test data are
 excluded from web releases.
+
+
+## Skewb first layer
+
+This catalogue is generated from Corner Lab's geometric Skewb simulator for
+first-layer practice with the yellow bottom centre and the DBL/DRB corners
+correctly solved. It is independent of the imported NS2 collection. Tracking
+the bottom centre and four bottom corners produces 69,984 reachable projected
+states; exactly 81 satisfy the fixed-centre and rear-corner conditions.
+The two front corners occupy separate tetrahedral corner orbits. Each has
+three available positions and three orientations, giving 9 × 9 cases.
+
+The catalogue retains all 81 configurations, including a solved skip; the
+80 unsolved cases are selected by default. Case IDs encode the position and
+yellow-sticker direction of each target corner, so preferences and histories
+do not depend on display order. Breadth-first search finds shortest solutions
+of one to five corner turns. Every setup and solution is checked against all
+three stickers of each target corner and the bottom centre.
+
+Both setups and solutions use explicit NS notation, allowing all eight corner
+axes. WCA setups alone, with their fixed UFR anchor, reach only 27 of these
+81 configurations in the required reference frame. The new trainer therefore
+labels NS setups clearly and retains the existing WCA setup convention in NS2.
+Disguised first-layer setups may change irrelevant pieces while preserving the
+entire first-layer projection. The goal is a correct layer, not just a uniform
+bottom face, and does not require the whole puzzle to be solved.
+
+Regenerate with `node scripts/build-skewb-first-layer.mjs` and verify with
+`node --test tests/skewb-first-layer.test.js`. Supplied PDFs and personal data
+are not inputs to this catalogue or included in the public build.

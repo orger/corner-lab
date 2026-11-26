@@ -16,6 +16,7 @@ import { createLTETrainer } from '../app/lte.js';
 import { ADDITIONAL_TRAINERS } from '../app/additional-trainers.js';
 import { isOBLSolved, isEPSolved } from '../app/square1-last-layer.js';
 import { applySkewbAlg, isSolvedSkewb } from '../app/skewb.js';
+import { isSkewbFirstLayerSolved } from '../app/skewb-first-layer.js';
 import * as firstFace from '../app/first-face-cases.js';
 import * as cubeview from '../app/cubeview.js';
 import * as stats from '../app/stats.js';
@@ -1276,8 +1277,8 @@ for (const entry of ADDITIONAL_TRAINERS) {
       const current = ui.trainerSnapshot(entry.id).current;
       assert.ok(current, `${entry.id} generated a drill`);
       seen.push(current.case.id);
-      const finalState = entry.id === 'skewb-ns2' ? applySkewbAlg(current.state, current.solution) : applySquare1Alg(current.state, current.solution);
-      assert.ok(entry.id === 'skewb-ns2' ? isSolvedSkewb(finalState) : entry.id === 'square1-obl' ? isOBLSolved(finalState) : isEPSolved(finalState));
+      const finalState = entry.id.startsWith('skewb') ? applySkewbAlg(current.state, current.solution) : applySquare1Alg(current.state, current.solution);
+      assert.ok(entry.id === 'skewb-first-layer' ? isSkewbFirstLayerSolved(finalState) : entry.id === 'skewb-ns2' ? isSolvedSkewb(finalState) : entry.id === 'square1-obl' ? isOBLSolved(finalState) : isEPSolved(finalState));
       if (i < 2) await ui.click('lte-next');
     }
     assert.equal(new Set(seen).size, 3);
@@ -1333,3 +1334,27 @@ for (const entry of ADDITIONAL_TRAINERS) {
     assert.equal(reloaded.snapshot().data[entry.branch].preferences[item.id], item.algorithms[1].id);
   });
 }
+
+test('Skewb first-layer skip displays an explicit zero-move solution and keeps a usable history', async () => {
+  const ui = await controller();
+  const entry = ADDITIONAL_TRAINERS.find(item => item.id === 'skewb-first-layer');
+  const skip = entry.cases.find(item => item.isSkip);
+  const branch = ui.snapshot().data.skewbfl;
+  branch.settings.selectedCases = [skip.id];
+  branch.settings.scrambleStyle = 'provided';
+  ui.switchTrainer(entry.id);
+  assert.equal(ui.trainerSnapshot(entry.id).current.scramble, '');
+  assert.match(ui.nodes.get('#app').innerHTML, /Solved puzzle — no setup moves/);
+  assert.doesNotMatch(ui.nodes.get('#app').innerHTML, /Already solved — no turns/);
+  ui.setTime(1000); await ui.click('lte-timer');
+  ui.setTime(1400); await ui.click('lte-timer');
+  assert.match(ui.nodes.get('#app').innerHTML, /Already solved — no turns/);
+  assert.equal(branch.attempts[0].algorithm, '');
+  assert.equal(branch.attempts[0].solution, '');
+  assert.equal(branch.attempts[0].seconds, .4);
+  const restored = validateData(JSON.parse(JSON.stringify(ui.snapshot().data)));
+  assert.deepEqual(restored.skewbfl, branch);
+  await ui.click('nav', { page: 'insights' });
+  assert.equal(ui.progressSnapshot().result.value, .4);
+  assert.equal(ui.progressSnapshot().result.contributingCaseCount, 1);
+});

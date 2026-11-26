@@ -3,11 +3,12 @@ import { DEFAULT_SPEED_WINDOW, MAX_SPEED_WINDOW, DEFAULT_RANK_COUNT, MAX_RANK_CO
 import { normalizeAlg, validateAlternative } from './cube.js';
 import { FIRST_FACE_CASES, DEFAULT_FIRST_FACE_CASE_IDS } from './first-face-cases.js';
 import { freshLTEData, validateLTEData, freshLTCData, validateLTCData, freshSQ1Data, validateSQ1Data,
-  freshSQ1OBLData, validateSQ1OBLData, freshSQ1EPData, validateSQ1EPData, freshSkewbNS2Data, validateSkewbNS2Data } from './lte-storage.js';
+  freshSQ1OBLData, validateSQ1OBLData, freshSQ1EPData, validateSQ1EPData, freshSkewbNS2Data, validateSkewbNS2Data,
+  freshSkewbFirstLayerData, validateSkewbFirstLayerData } from './lte-storage.js';
 
 export const SCHEMA_VERSION=1;
 const KEY='corner-lab-v1';
-export function freshData() { return {version:SCHEMA_VERSION,trainer:'2x2',settings:{selectedCases:[],preAuf:['','U',"U'",'U2'],postAuf:['','U',"U'",'U2'],bottomAuf:['','D','D2',"D'"],orientations:[''],colors:['white'],mode:'last-layer',timingMode:'simple',inspectionAudio:false,strategy:'uniform',slowWindow:DEFAULT_SPEED_WINDOW,rankCount:DEFAULT_RANK_COUNT,insightsWindow:DEFAULT_INSIGHTS_WINDOW,finishIds:[...DEFAULT_FIRST_FACE_CASE_IDS],record:true,showPreview:true},preferences:{},attempts:[],presets:[],lte:freshLTEData(),ltc:freshLTCData(),sq1:freshSQ1Data(),sq1obl:freshSQ1OBLData(),sq1ep:freshSQ1EPData(),skewbns2:freshSkewbNS2Data()}; }
+export function freshData() { return {version:SCHEMA_VERSION,trainer:'2x2',settings:{selectedCases:[],preAuf:['','U',"U'",'U2'],postAuf:['','U',"U'",'U2'],bottomAuf:['','D','D2',"D'"],orientations:[''],colors:['white'],mode:'last-layer',timingMode:'simple',inspectionAudio:false,strategy:'uniform',slowWindow:DEFAULT_SPEED_WINDOW,rankCount:DEFAULT_RANK_COUNT,insightsWindow:DEFAULT_INSIGHTS_WINDOW,finishIds:[...DEFAULT_FIRST_FACE_CASE_IDS],record:true,showPreview:true},preferences:{},attempts:[],presets:[],lte:freshLTEData(),ltc:freshLTCData(),sq1:freshSQ1Data(),sq1obl:freshSQ1OBLData(),sq1ep:freshSQ1EPData(),skewbns2:freshSkewbNS2Data(),skewbfl:freshSkewbFirstLayerData()}; }
 
 const casesById = new Map(CASES.map(item => [item.id, item]));
 const finishIds = new Set(FIRST_FACE_CASES.map(item => item.id));
@@ -186,12 +187,12 @@ function attempt(value, knownIds) {
  * Optional history fields remain optional for early version-1 solve records.
  */
 export function validateData(input) {
-  object(input, 'backup', ['version', 'initialized', 'trainer', 'settings', 'preferences', 'attempts', 'presets', 'lte', 'ltc', 'sq1', 'sq1obl', 'sq1ep', 'skewbns2']);
+  object(input, 'backup', ['version', 'initialized', 'trainer', 'settings', 'preferences', 'attempts', 'presets', 'lte', 'ltc', 'sq1', 'sq1obl', 'sq1ep', 'skewbns2', 'skewbfl']);
   if (input.version !== SCHEMA_VERSION || !Array.isArray(input.attempts) || !Array.isArray(input.presets)) fail('This is not a Corner Lab version 1 backup.');
   const attemptIds = new Set(), presetIds = new Set();
   return {
     version: SCHEMA_VERSION,
-    trainer: own(input, 'trainer') ? choice(input.trainer, ['2x2', '5x5', '5x5-centres', 'square1', 'square1-obl', 'square1-ep', 'skewb-ns2'], 'trainer') : '2x2',
+    trainer: own(input, 'trainer') ? choice(input.trainer, ['2x2', '5x5', '5x5-centres', 'square1', 'square1-obl', 'square1-ep', 'skewb-ns2', 'skewb-first-layer'], 'trainer') : '2x2',
     initialized: own(input, 'initialized') ? boolean(input.initialized, 'initialized flag') : true,
     settings: settings(input.settings, 'practice'),
     preferences: preferences(input.preferences),
@@ -209,6 +210,7 @@ export function validateData(input) {
     sq1obl: own(input, 'sq1obl') ? validateSQ1OBLData(input.sq1obl) : freshSQ1OBLData(),
     sq1ep: own(input, 'sq1ep') ? validateSQ1EPData(input.sq1ep) : freshSQ1EPData(),
     skewbns2: own(input, 'skewbns2') ? validateSkewbNS2Data(input.skewbns2) : freshSkewbNS2Data(),
+    skewbfl: own(input, 'skewbfl') ? validateSkewbFirstLayerData(input.skewbfl) : freshSkewbFirstLayerData(),
   };
 }
 const DATABASE = 'corner-lab';

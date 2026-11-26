@@ -1,6 +1,6 @@
 {
   "name": "corner-lab",
-  "version": "1.8.3",
+  "version": "1.9.0",
   "private": true,
   "type": "module",
   "description": "Offline 2×2, 5×5, Square-1 and Skewb practice for iPhone, the web and macOS",

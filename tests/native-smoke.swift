@@ -44,7 +44,7 @@ struct NativeSmoke {
                 if phase == 0 {
                     guard let details = value as? [String: Any], let id = details["attemptID"] as? String else { fail("Test result did not contain an attempt ID.") }
                     attemptID = id
-                    guard let ids = details["expandedAttemptIDs"] as? [String: String], ids.count == 3 else { fail("New trainer results were not returned.") }
+                    guard let ids = details["expandedAttemptIDs"] as? [String: String], ids.count == 4 else { fail("New trainer results were not returned.") }
                     expandedAttemptIDs = ids
                     phase = 1
                     webView.reload()
@@ -57,7 +57,7 @@ struct NativeSmoke {
                               let png = bitmap.representation(using: .png, properties: [:]) else { fail("Phone layout snapshot failed.") }
                         do { try png.write(to: store.deletingLastPathComponent().appendingPathComponent("phone-layout.png")) }
                         catch { fail("Could not save phone layout snapshot.") }
-                        print("PASS: Native modules, Square-1 OBL/EP and Skewb NS2, 390px phone layout, UI, bridge, durable save, backup, reload, and isolated data path. Fixture: \(store.path)")
+                        print("PASS: Native modules, Square-1 OBL/EP and Skewb first layer/NS2, 390px phone layout, UI, bridge, durable save, backup, reload, and isolated data path. Fixture: \(store.path)")
                         exit(0)
                     }
                 }
@@ -73,11 +73,12 @@ struct NativeSmoke {
     assert(document.querySelector('h1').textContent.includes('corner'), 'Practice UI missing');
     assert(!document.querySelector('.error'), document.querySelector('.error')?.textContent || 'Startup error');
     assert(window.cornerlabNative, 'Native bridge missing');
-    assert(document.querySelector('#trainer-select').options.length === 7, 'Seven trainers must be available');
+    assert(document.querySelector('#trainer-select').options.length === 8, 'Eight trainers must be available');
     const expandedTrainers = [
       { id: 'square1-obl', branch: 'sq1obl', count: 185, seconds: 8.25 },
       { id: 'square1-ep', branch: 'sq1ep', count: 99, seconds: 10.5 },
-      { id: 'skewb-ns2', branch: 'skewbns2', count: 134, seconds: 7.1, caseId: 'NS2-132' }
+      { id: 'skewb-ns2', branch: 'skewbns2', count: 134, seconds: 7.1, caseId: 'NS2-132' },
+      { id: 'skewb-first-layer', branch: 'skewbfl', count: 81, seconds: 3.25 }
     ];
     const chooseTrainer = id => {
       const select = document.querySelector('#trainer-select');
@@ -133,6 +134,13 @@ struct NativeSmoke {
       document.querySelector('[data-action="lte-manual"]').click();
       for (let i = 0; i < 80; i++) { saved = await window.cornerlabNative.load(); if (saved[item.branch]?.attempts.length === 1) break; await wait(50); }
       const record = saved[item.branch]?.attempts[0];
+      if (item.id === 'skewb-first-layer') {
+        assert(saved.skewbfl.settings.selectedCases.length === 80, 'Default first-layer selection must omit the skip');
+        assert(document.querySelectorAll('.sq1-preview [data-fixed-sticker]').length === 3, 'Fixed pieces not marked');
+        const { applySkewbAlg, solvedSkewb } = await import('./skewb.js');
+        const { isSkewbFirstLayerSolved } = await import('./skewb-first-layer.js');
+        assert(isSkewbFirstLayerSolved(applySkewbAlg(solvedSkewb(), record.scramble + ' ' + record.solution)), 'Native first-layer solution fails');
+      }
       assert(record?.seconds === item.seconds, item.id + ' manual result was not persisted');
       if (item.caseId) assert(record.caseId === item.caseId, 'Added Skewb case did not save its own result');
       assert(record.scrambleStyle === 'disguised', item.id + ' setup metadata missing');
@@ -215,6 +223,9 @@ struct NativeSmoke {
     assert(shapeNotes, 'Shape notes missing after native reload');
     assert(document.documentElement.scrollWidth <= innerWidth + 1, 'Shape notes overflow the phone viewport');
     shapeNotes.scrollIntoView({ block: 'center' });
+    await wait(100);
+    chooseTrainer('skewb-first-layer');
+    document.querySelector('.sq1-preview').scrollIntoView({ block: 'center' });
     await wait(100);
     return { phase: 'after-reload', phoneWidth: innerWidth, square1Attempts: loaded.sq1.attempts.length, restoredAttempts: loaded.attempts.length, libraryCards, expandedLibraries };
     """# }

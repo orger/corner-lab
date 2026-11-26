@@ -17,6 +17,7 @@ const trainers = [
   { id: 'square1-obl', branch: 'sq1obl', count: 185 },
   { id: 'square1-ep', branch: 'sq1ep', count: 99 },
   { id: 'skewb-ns2', branch: 'skewbns2', count: 134 },
+  { id: 'skewb-first-layer', branch: 'skewbfl', count: 81 },
 ];
 const ready = () => page.waitForSelector('#trainer-select');
 const stored = () => page.evaluate(async () => (await import('./storage.js')).loadData());
@@ -28,7 +29,7 @@ try {
   await mkdir(output, { recursive: true });
   await page.goto(base);
   await ready();
-  assert.equal(await page.locator('#trainer-select option').count(), 7);
+  assert.equal(await page.locator('#trainer-select option').count(), 8);
   for (const [index, trainer] of trainers.entries()) {
     await page.locator('#trainer-select').selectOption(trainer.id);
     assert(await page.locator('.lte-preview svg').count(), `${trainer.id}: missing preview`);
@@ -36,15 +37,21 @@ try {
     if (trainer.branch.startsWith('sq1')) assert.equal(await page.locator('[data-lte-setting="layerAlignment"]').inputValue(), 'random');
     else assert.equal(await page.locator('[data-lte-setting="layerAlignment"]').count(), 0);
     assert.equal((await stored())[trainer.branch].attempts.length, 0);
+    if (trainer.id === 'skewb-first-layer') {
+      assert.equal((await stored()).skewbfl.settings.selectedCases.length, 80);
+      assert.equal(await page.locator('.sq1-preview [data-fixed-sticker]').count(), 3);
+      assert((await page.locator('.scramble-block').innerText()).includes('NS NOTATION'));
+    }
 
     // Select a real alternate algorithm and a full Learning batch. Skewb also
     // exercises each easy case added after the original 131-case catalogue.
     const selected = await page.evaluate(async id => {
       const { ADDITIONAL_TRAINERS } = await import('./additional-trainers.js');
       const cases = ADDITIONAL_TRAINERS.find(item => item.id === id).cases;
-      const first = cases.find(item => item.algorithms.length > 1);
+      const first = cases.find(item => item.algorithms.length > 1 && !item.isSkip);
       if (!first) throw new Error('No algorithm alternatives for ' + id);
       return id === 'skewb-ns2' ? [first.id, 'NS2-132', 'NS2-133', 'NS2-134']
+        : id === 'skewb-first-layer' ? [first.id, cases.find(item => item.id !== first.id && !item.isSkip).id, cases.find(item => item.isSkip).id]
         : [first.id, cases.find(item => item.id !== first.id).id];
     }, trainer.id);
     await navigate('library');
@@ -102,6 +109,14 @@ try {
       assert([-3, 0, 3, 6].includes(record.initialTop));
       assert([-3, 0, 3, 6].includes(record.initialBottom));
     }
+    if (trainer.id === 'skewb-first-layer') await page.evaluate(async records => {
+      const { applySkewbAlg, solvedSkewb } = await import('./skewb.js');
+      const { isSkewbFirstLayerSolved } = await import('./skewb-first-layer.js');
+      for (const record of records) {
+        const state = applySkewbAlg(solvedSkewb(), record.scramble);
+        if (!isSkewbFirstLayerSolved(applySkewbAlg(state, record.solution))) throw new Error('First-layer result solution failed');
+      }
+    }, data.attempts);
     await navigate('insights');
     assert.equal(await page.locator('[data-progress="set"]').inputValue(), trainer.id);
     assert(await page.locator('.progress-plot svg').count());
@@ -168,7 +183,7 @@ try {
     await fits(`${trainer.id} offline`);
   }
   assert.deepEqual(errors, []);
-  console.log(`PASS: Three independent histories, full backup restore and offline reload. Screenshots and synthetic backup: ${output}`);
+  console.log(`PASS: Four independent histories, full backup restore and offline reload. Screenshots and synthetic backup: ${output}`);
 } finally {
   await browser.close();
 }

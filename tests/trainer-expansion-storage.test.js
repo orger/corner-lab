@@ -3,11 +3,13 @@ import assert from 'node:assert/strict';
 import { CASES_SQ1_OBL } from '../app/catalog-square1-obl.js';
 import { CASES_SQ1_EP } from '../app/catalog-square1-ep.js';
 import { CASES_SKEWB_NS2 } from '../app/catalog-skewb-ns2.js';
+import { CASES_SKEWB_FIRST_LAYER } from '../app/catalog-skewb-first-layer.js';
 import { CASES_SQ1 } from '../app/catalog-square1.js';
 import { CASES5 } from '../app/catalog5.js';
 import { CASES_CENTRES } from '../app/catalog-centres.js';
+import { CASES } from '../app/catalog.js';
 import { freshSQ1OBLData, validateSQ1OBLData, freshSQ1EPData, validateSQ1EPData,
-  freshSkewbNS2Data, validateSkewbNS2Data } from '../app/lte-storage.js';
+  freshSkewbNS2Data, validateSkewbNS2Data, freshSkewbFirstLayerData, validateSkewbFirstLayerData } from '../app/lte-storage.js';
 import { freshData, validateData } from '../app/storage.js';
 import { createSkewbDrill } from '../app/skewb.js';
 
@@ -15,6 +17,7 @@ const trainers = [
   { key: 'sq1obl', trainer: 'square1-obl', cases: CASES_SQ1_OBL, fresh: freshSQ1OBLData, validate: validateSQ1OBLData, alignment: true },
   { key: 'sq1ep', trainer: 'square1-ep', cases: CASES_SQ1_EP, fresh: freshSQ1EPData, validate: validateSQ1EPData, alignment: true },
   { key: 'skewbns2', trainer: 'skewb-ns2', cases: CASES_SKEWB_NS2, fresh: freshSkewbNS2Data, validate: validateSkewbNS2Data, alignment: false },
+  { key: 'skewbfl', trainer: 'skewb-first-layer', cases: CASES_SKEWB_FIRST_LAYER, fresh: freshSkewbFirstLayerData, validate: validateSkewbFirstLayerData, alignment: false },
 ];
 function attempt(item) {
   const alg = item.algorithms[0];
@@ -40,7 +43,7 @@ test('new trainers have independent defaults, preferences, saved practices and d
   for (const trainer of trainers) {
     const defaults = trainer.fresh();
     assert.ok(trainer.cases.length > 0);
-    assert.deepEqual(defaults.settings.selectedCases, trainer.cases.map(item => item.id));
+    assert.deepEqual(defaults.settings.selectedCases, trainer.cases.filter(item => !item.isSkip).map(item => item.id));
     assert.deepEqual(defaults.settings.orientations, ['']);
     assert.equal(defaults.settings.scrambleStyle, 'disguised');
     assert.equal(defaults.settings.layerAlignment, trainer.alignment ? 'random' : undefined);
@@ -61,6 +64,7 @@ test('new trainers have independent defaults, preferences, saved practices and d
   restored.sq1obl.attempts.length = 0;
   assert.equal(restored.sq1ep.attempts.length, 1);
   assert.equal(restored.skewbns2.attempts.length, 1);
+  assert.equal(restored.skewbfl.attempts.length, 1);
 });
 
 test('version-one backups gain the new branches without changing any existing history', () => {
@@ -88,6 +92,37 @@ test('version-one backups gain the new branches without changing any existing hi
   assert.deepEqual(loaded, input);
   assert.deepEqual(input, before);
   for (const field of ['layerAlignment', 'initialTop', 'initialBottom']) assert.equal(Object.hasOwn(loaded.sq1.attempts[0], field), false);
+});
+
+test('adding first-layer practice preserves all seven existing trainer histories and settings', () => {
+  const input = freshData();
+  input.initialized = true;
+  input.trainer = 'skewb-ns2';
+  delete input.skewbfl;
+  input.settings.selectedCases = ['CLL-S1'];
+  input.settings.strategy = 'slowest';
+  input.settings.slowWindow = 23;
+  input.preferences = { 'CLL-S1': { selected: 'my-sune', custom: [{ id: 'my-sune',
+    alg: CASES.find(item => item.id === 'CLL-S1').algorithms[0].alg, source: 'My preferred algorithm' }] } };
+  input.attempts = [{ id: 'old-2x2-result', caseId: 'CLL-S1', seconds: 2.4,
+    createdAt: '2026-10-04T10:00:00Z', recallFail: true, dnf: false, assisted: false,
+    timingMode: 'simple', inspectionAudio: false, bottomAuf: '', initialAuf: '', finishCaseId: '' }];
+  input.presets = [{ id: 'old-2x2-practice', name: 'My CLL', settings: structuredClone(input.settings) }];
+  for (const [key, item] of [['lte', CASES5[0]], ['ltc', CASES_CENTRES[0]], ['sq1', CASES_SQ1[0]]]) {
+    input[key].settings.selectedCases = [item.id];
+    input[key].settings.strategy = 'learning';
+    input[key].preferences[item.id] = item.algorithms[0].id;
+    input[key].attempts = [attempt(item)];
+    input[key].presets = [{ id: 'shared-practice', name: key, settings: structuredClone(input[key].settings) }];
+  }
+  for (const trainer of trainers.filter(item => item.key !== 'skewbfl')) input[trainer.key] = fixture(trainer);
+  input.skewbns2.attempts[0].algorithm = `  ${input.skewbns2.attempts[0].algorithm}  `;
+  const before = JSON.stringify(input);
+  const restored = validateData(JSON.parse(before));
+  assert.deepEqual(restored.skewbfl, freshSkewbFirstLayerData());
+  delete restored.skewbfl;
+  assert.deepEqual(restored, input);
+  assert.equal(JSON.stringify(input), before, 'validation must not mutate the old backup');
 });
 
 test('new trainer branches reject malformed roots and cross-trainer selectors and results', () => {
@@ -183,15 +218,16 @@ test('new Square-1 stages retain recorded quarter turns and keep missing metadat
       assert.throws(() => trainer.validate(input));
     }
   }
-  const trainer = trainers[2];
-  for (const field of ['layerAlignment', 'initialTop', 'initialBottom']) {
-    const input = fixture(trainer); input.attempts[0][field] = field === 'layerAlignment' ? 'random' : 3;
-    assert.throws(() => trainer.validate(input));
-  }
-  for (const target of ['settings', 'preset']) {
-    const input = fixture(trainer);
-    (target === 'settings' ? input.settings : input.presets[0].settings).layerAlignment = 'random';
-    assert.throws(() => trainer.validate(input));
+  for (const trainer of trainers.filter(item => !item.alignment)) {
+    for (const field of ['layerAlignment', 'initialTop', 'initialBottom']) {
+      const input = fixture(trainer); input.attempts[0][field] = field === 'layerAlignment' ? 'random' : 3;
+      assert.throws(() => trainer.validate(input));
+    }
+    for (const target of ['settings', 'preset']) {
+      const input = fixture(trainer);
+      (target === 'settings' ? input.settings : input.presets[0].settings).layerAlignment = 'random';
+      assert.throws(() => trainer.validate(input));
+    }
   }
 });
 
@@ -268,4 +304,25 @@ test('the three added easy Skewb cases retain independent preferences, solves an
   assert.deepEqual(restored, root);
   assert.deepEqual(restored.skewbns2.attempts.map(record => record.caseId), ['NS2-001', 'NS2-132', 'NS2-133', 'NS2-134']);
   assert.deepEqual(restored.skewbns2.presets[0].settings.selectedCases, ['NS2-132', 'NS2-133', 'NS2-134']);
+});
+
+test('Skewb first-layer skip is optional and its empty solve survives backup import', () => {
+  const skip = CASES_SKEWB_FIRST_LAYER.find(item => item.isSkip);
+  assert.ok(skip);
+  const branch = freshSkewbFirstLayerData();
+  assert.equal(branch.settings.selectedCases.includes(skip.id), false);
+  branch.settings.selectedCases.push(skip.id);
+  branch.preferences[skip.id] = skip.algorithms[0].id;
+  branch.attempts = [attempt(skip)];
+  assert.equal(branch.attempts[0].algorithm, '');
+  branch.presets = [{ id: 'with-skip', name: 'Include finished layer', settings: structuredClone(branch.settings) }];
+  const root = freshData();
+  root.initialized = true;
+  root.trainer = 'skewb-first-layer';
+  root.skewbfl = branch;
+  assert.deepEqual(validateData(JSON.parse(JSON.stringify(root))), root);
+
+  const nonSkip = CASES_SKEWB_FIRST_LAYER.find(item => !item.isSkip);
+  branch.attempts = [{ ...attempt(nonSkip), algorithm: '' }];
+  assert.throws(() => validateSkewbFirstLayerData(branch));
 });

@@ -135,6 +135,7 @@
   .small{font-size:12px}
   .table-wrap{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
   .table-wrap table{min-width:560px;font-size:12px}
+  .table-wrap td:first-child{min-width:145px}
   th{padding:12px 14px;font-size:10px}
   td{padding:10px 14px;font-size:12px}
   .table-link{min-height:44px;font-size:12px;line-height:1.5}

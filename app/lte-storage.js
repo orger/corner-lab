@@ -5,6 +5,7 @@ import { CASES_SQ1 } from './catalog-square1.js';
 import { CASES_SQ1_OBL } from './catalog-square1-obl.js';
 import { CASES_SQ1_EP } from './catalog-square1-ep.js';
 import { CASES_SKEWB_NS2 } from './catalog-skewb-ns2.js';
+import { CASES_SKEWB_FIRST_LAYER } from './catalog-skewb-first-layer.js';
 import { parseSquare1Alg } from './square1.js';
 import { parseSkewbAlg } from './skewb.js';
 
@@ -18,6 +19,8 @@ const square1OBL = square1Stage(CASES_SQ1_OBL, 'Square-1 OBL');
 const square1EP = square1Stage(CASES_SQ1_EP, 'Square-1 EP');
 const skewbNS2 = { cases: CASES_SKEWB_NS2, casesById: new Map(CASES_SKEWB_NS2.map(item => [item.id, item])), label: 'Skewb NS2', orientations: [''], parseAlgorithm: parseSkewbAlg,
   scrambleStyles: ['provided', 'disguised'], defaultScrambleStyle: 'disguised' };
+const skewbFirstLayer = { cases: CASES_SKEWB_FIRST_LAYER, casesById: new Map(CASES_SKEWB_FIRST_LAYER.map(item => [item.id, item])), label: 'Skewb first layer', orientations: [''], parseAlgorithm: parseSkewbAlg,
+  defaultCases: CASES_SKEWB_FIRST_LAYER.filter(item => !item.isSkip), scrambleStyles: ['provided', 'disguised'], defaultScrambleStyle: 'disguised' };
 const orientations = ['', 'y', 'y2', "y'"];
 const timingModes = ['simple', 'inspection'];
 const scrambleStyles = ['provided', 'varied'];
@@ -28,7 +31,7 @@ const fail = message => { throw new Error(message); };
 function freshTrainingData(catalog) {
   return {
     settings: {
-      selectedCases: catalog.cases.map(item => item.id), orientations: [''],
+      selectedCases: (catalog.defaultCases || catalog.cases).map(item => item.id), orientations: [''],
       strategy: 'uniform', slowWindow: DEFAULT_SPEED_WINDOW, rankCount: DEFAULT_RANK_COUNT, insightsWindow: DEFAULT_INSIGHTS_WINDOW, scrambleStyle: catalog.defaultScrambleStyle || 'provided', record: true, showPreview: true,
       timingMode: 'simple', inspectionAudio: false,
       ...(catalog.layerAlignments ? { layerAlignment: 'random' } : {}),
@@ -42,6 +45,7 @@ export const freshSQ1Data = () => freshTrainingData(square1);
 export const freshSQ1OBLData = () => freshTrainingData(square1OBL);
 export const freshSQ1EPData = () => freshTrainingData(square1EP);
 export const freshSkewbNS2Data = () => freshTrainingData(skewbNS2);
+export const freshSkewbFirstLayerData = () => freshTrainingData(skewbFirstLayer);
 
 function object(value, label, keys) {
   if (!value || typeof value !== 'object' || Array.isArray(value) ||
@@ -129,7 +133,7 @@ function attempt(value, knownIds, catalog) {
     id, caseId, group: choice(value.group, [item.group], `${label} solve group`),
     algorithmId: selectedAlgorithm(caseId, value.algorithmId, `${label} solve`, catalog),
     // Keep the algorithm used at solve time, even if a later catalog changes it.
-    algorithm: string(value.algorithm, `${label} solve algorithm`, { max: 200000 }),
+    algorithm: string(value.algorithm, `${label} solve algorithm`, { empty: item.isSkip === true, max: 200000 }),
     orientation: choice(value.orientation, catalog.orientations || orientations, `${label} solve orientation`),
     scrambleStyle: own(value, 'scrambleStyle') ? choice(value.scrambleStyle, catalog.scrambleStyles || scrambleStyles, `${label} solve scramble style`) : 'provided',
     timingMode: choice(value.timingMode, timingModes, `${label} solve timing mode`),
@@ -192,3 +196,4 @@ export const validateSQ1Data = value => validateTrainingData(value, square1);
 export const validateSQ1OBLData = value => validateTrainingData(value, square1OBL);
 export const validateSQ1EPData = value => validateTrainingData(value, square1EP);
 export const validateSkewbNS2Data = value => validateTrainingData(value, skewbNS2);
+export const validateSkewbFirstLayerData = value => validateTrainingData(value, skewbFirstLayer);

@@ -31,6 +31,10 @@ for (const [face, { normal }] of Object.entries(FACES)) {
 }
 const slotIndex = new Map(slots.map((slot, i) => [key(slot.position, slot.normal), i]));
 const identity = slots.map((_, i) => i);
+// Geometry metadata for stage-specific projections. Return detached vectors so
+// a catalogue builder or diagram cannot mutate the simulator's move tables.
+export const skewbStickerGeometry = () => slots.map(({ position, normal, color }, index) =>
+  ({ index, position: [...position], normal: [...normal], color }));
 const turn120 = (vector, axis) => {
   const d = dot(vector, axis), c = cross(axis, vector);
   return vector.map((value, i) => Math.round((-value + axis[i] * d - c[i]) / 2));

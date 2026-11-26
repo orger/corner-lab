@@ -12,12 +12,13 @@ On the iPhone, reconnect and reopen Corner Lab; when **Update ready** appears,
 choose **Update** while no timer is running. The update keeps the device's data.
 For the Mac version, close Corner Lab and reopen the newly built app bundle.
 
-Version 1.8.3 adds Pure Pi and the two single-sledge/hedge cases to Skewb NS2,
-bringing its catalogue to 134 cases. All seven trainers remain available on both
-platforms, with existing histories and settings preserved. Backups from before
-OBL, EP and Skewb NS2 were added gain empty histories for those trainers. The
-Square-1 stages keep separate statistics; Skewb includes NS2 only. Check the
-in-app reference grip and notation before starting either puzzle.
+Version 1.9.0 adds Skewb first-layer practice for all 81 legal cases with the
+bottom centre and both rear-bottom corners solved. The 80 unsolved cases are
+selected initially; the solved skip is optional. All eight trainers share the
+same features on both platforms. Existing histories and settings are preserved;
+older backups gain an empty first-layer history. Read the in-app notation:
+first-layer setups and solutions both use NS corner turns, while NS2 setups
+use WCA notation.
 
 ## Publish the trainer
 
@@ -59,7 +60,7 @@ If you prefer branch-based Pages publishing, copy the **contents** of `dist/web`
 
 1. Open the published [cubing.orger.org](https://cubing.orger.org) address in Safari while online.
 2. Open Safari's **Share** menu, choose **Add to Home Screen**, and enable **Open as Web App** if offered. Add Corner Lab. [Apple's installation guide](https://support.apple.com/guide/iphone/open-as-web-app-iphea86e5236/ios) shows the current controls.
-3. Launch Corner Lab from its new icon while still online and wait for **Ready offline**. This saves the app and all seven trainers on the phone: 2×2, both 5×5 trainers, Square-1 cube shape / OBL / EP, and Skewb NS2. Without a connection, the status reads **Offline · ready to practise**.
+3. Launch Corner Lab from its new icon while still online and wait for **Ready offline**. This saves the app and all eight trainers on the phone: 2×2, both 5×5 trainers, Square-1 cube shape / OBL / EP, and Skewb first layer / NS2. Without a connection, the status reads **Offline · ready to practise**.
 4. Try opening it with the connection disabled before relying on it away from home. The first load and downloading future versions require internet access.
 
 Tap the large timer or use the on-screen buttons for inspection and solving. **Cancel** stops timing without recording a result. Switching away from the app or locking the phone also cancels an unfinished attempt; it does not resume automatically. The app asks the browser to keep the screen awake during timing where supported.
